@@ -1,10 +1,10 @@
-import { useState } from "react"
-import { FaRegEye, FaRegEyeSlash } from "react-icons/fa"
-import { FiMessageSquare } from "react-icons/fi"
-import { Link } from "react-router-dom"
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
+import { FiMessageSquare } from "react-icons/fi";
 
-const LoginPage = () => {
-const [showPass, setShowPass] = useState(false)
+const SignupPage = () => {
+  const [showPass, setShowPass] = useState(false);
 
   return (
     <div className="w-screen h-screen bg-slate-100 flex justify-center items-center">
@@ -12,11 +12,19 @@ const [showPass, setShowPass] = useState(false)
         <div className="p-4 rounded-md bg-sky-100 mb-2">
           <FiMessageSquare className="text-2xl" />
         </div>
-        <h1 className="font-bold text-2xl">Welcome Back!</h1>
+        <h1 className="font-bold text-2xl">Create Account</h1>
         <h3 className="text-sm font-normal">
-          the best chat app?
+          Get started with your free account
         </h3>
         <form className="mt-5 flex flex-col">
+          <label className="label">
+            <span className="text-sm font-semibold ml-2">Name</span>
+          </label>
+          <input
+            type="text"
+            placeholder="yourname"
+            className="w-96 p-2 py-3 text-sm border-none outline-none"
+          />
           <label className="label mt-3">
             <span className="text-sm font-semibold ml-2">Email</span>
           </label>
@@ -46,16 +54,16 @@ const [showPass, setShowPass] = useState(false)
             type="submit"
             className="mt-4 bg-sky-300 p-4 text-sm font-semibold rounded"
           >
-            Sign in
+            Create Account
           </button>
         </form>
         <div className="mt-6 text-xs flex gap-1">
-          <h3 >Don&lsquo;t have an account.</h3>
-          <Link to="/signup" className="text-sky-900 underline underline-offset-1">Create Account</Link>
+          <h3 >Already have an account.</h3>
+          <Link to="/login" className="text-sky-900 underline underline-offset-1">Sign In</Link>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default LoginPage
+export default SignupPage;
