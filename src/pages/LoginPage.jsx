@@ -7,14 +7,14 @@ const LoginPage = () => {
 const [showPass, setShowPass] = useState(false)
 
   return (
-    <div className="w-screen h-screen bg-slate-100 flex justify-center items-center">
+    <div className="w-screen h-screen bg-slate-100 flex justify-center items-center text-slate-700">
       <div className="bg-slate-50 w-1/3 h-fit p-5 flex flex-col items-center">
         <div className="p-4 rounded-md bg-sky-100 mb-2">
           <FiMessageSquare className="text-2xl" />
         </div>
         <h1 className="font-bold text-2xl">Welcome Back!</h1>
         <h3 className="text-sm font-normal">
-          the best chat app?
+          Sharing is caring
         </h3>
         <form className="mt-5 flex flex-col">
           <label className="label mt-3">
@@ -39,7 +39,7 @@ const [showPass, setShowPass] = useState(false)
               className="absolute top-3 right-3"
               onClick={() => setShowPass(!showPass)}
             >
-              {showPass ? <FaRegEye /> : <FaRegEyeSlash />}
+              {showPass ? <FaRegEyeSlash /> : <FaRegEye />}
             </button>
           </div>
           <button

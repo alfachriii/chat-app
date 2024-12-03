@@ -7,7 +7,7 @@ const SignupPage = () => {
   const [showPass, setShowPass] = useState(false);
 
   return (
-    <div className="w-screen h-screen bg-slate-100 flex justify-center items-center">
+    <div className="w-screen h-screen bg-slate-100 flex justify-center items-center text-slate-700">
       <div className="bg-slate-50 w-1/3 h-fit p-5 flex flex-col items-center">
         <div className="p-4 rounded-md bg-sky-100 mb-2">
           <FiMessageSquare className="text-2xl" />
@@ -47,7 +47,7 @@ const SignupPage = () => {
               className="absolute top-3 right-3"
               onClick={() => setShowPass(!showPass)}
             >
-              {showPass ? <FaRegEye /> : <FaRegEyeSlash />}
+              {showPass ? <FaRegEyeSlash /> : <FaRegEye />}
             </button>
           </div>
           <button
