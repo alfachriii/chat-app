@@ -3,9 +3,9 @@
 import { BiSolidMessageDetail } from "react-icons/bi";
 import { FaArrowLeft, FaSearch } from "react-icons/fa";
 import { LuLogOut } from "react-icons/lu";
-import pp from "../../assets/gua.jpeg";
 import Profile from "./Profile";
 import { useState } from "react";
+import { useAuthStore } from "../../store/auth.store";
 
 // eslint-disable-next-line react/prop-types
 const Settings = ({ closeSettings }) => {
@@ -20,13 +20,20 @@ const Settings = ({ closeSettings }) => {
     setHiddenSettings(false);
   };
 
+  const { logout, authUser } = useAuthStore();
+
+  const handleLogout = (e) => {
+    e.preventDefault();
+    logout();
+  };
+
   return (
     <div>
       {!hiddenSettings ? (
         <div className="flex flex-col w-full">
           <div className="w-full flex justify-between">
             <div className="flex items-center gap-5 p-5">
-              <button onClick={closeSettings}>
+              <button className="p-2 rounded-full" onClick={closeSettings}>
                 <FaArrowLeft className="cursor-pointer" />
               </button>
               <h1 className="text-xl font-medium">Settings</h1>
@@ -45,10 +52,10 @@ const Settings = ({ closeSettings }) => {
               className="flex items-center p-3 gap-5 hover:bg-[#e3edf3] cursor-pointer"
               onClick={openProfile}
             >
-              <img src={pp} alt="" className="size-24 rounded-full" />
+              <img src={authUser.profilePic || "/avatar.png"} alt="" className="size-24 rounded-full" />
               <div>
-                <h3 className="name text-slate-900 font-medium">al</h3>
-                <h4 className="info text-sm">sedang rapat</h4>
+                <h3 className="name text-slate-900 font-medium">{authUser.name}</h3>
+                <h4 className="info text-sm">{authUser.about}</h4>
               </div>
             </div>
             <ul className="setting-list mt-5">
@@ -56,9 +63,9 @@ const Settings = ({ closeSettings }) => {
                 <BiSolidMessageDetail className="text-3xl" />
                 <h3 className="text-lg font-medium">Chats</h3>
               </li>
-              <li className="py-3 p-3 gap-7 flex items-center border-b text-red-600 cursor-pointer hover:bg-[#e3edf3]">
+              <li className="py-3 p-3 gap-7 flex items-center border-b text-red-600 cursor-pointer hover:bg-[#e3edf3]" onClick={handleLogout}>
                 <LuLogOut className="text-3xl" />
-                <h3 className="text-lg font-medium">Log Out</h3>
+                  <h3 className="text-lg font-medium">Log Out</h3>
               </li>
             </ul>
           </div>

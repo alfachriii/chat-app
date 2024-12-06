@@ -3,15 +3,23 @@ import { HiDotsVertical } from "react-icons/hi";
 import { FaSearch } from "react-icons/fa";
 import { useState } from "react";
 import Settings from "./settings/Settings";
+import { useAuthStore } from "../store/auth.store";
 
 const ChatList = () => {
   const [showOptions, setShowOptions] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
+  const { logout } = useAuthStore()
+
   const closeSettings = () => {
     setShowSettings(false);
     setShowOptions(false);
   };
+
+  const handleLogout = (e) => {
+    e.preventDefault()
+    logout()
+  }
 
   return (
     <>
@@ -34,7 +42,7 @@ const ChatList = () => {
                     >
                       Settings
                     </button>
-                    <button className="w-full flex text-sm font-medium cursor-pointer px-8 py-3 hover:bg-[#e4edf4]">
+                    <button className="w-full flex text-sm font-medium cursor-pointer px-8 py-3 hover:bg-[#e4edf4]" onClick={handleLogout}>
                       Log Out
                     </button>
                   </div>
