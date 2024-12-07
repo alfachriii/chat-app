@@ -8,6 +8,10 @@ export const useAuthStore = create((set) => ({
     isLoggingIn: false,
     isCheckingAuth: true,
 
+    profilePicModal: false,
+    showProfilePicModal: () => set({ profilePicModal: true }),
+    closeProfilePicModal: () => set({ profilePicModal: false }),
+
     checkAuth: async () => {
         try {
             const res = await api.get("/auth/check")

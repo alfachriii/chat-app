@@ -4,6 +4,7 @@ import {
   FaRegFolderOpen,
   FaRegTrashAlt,
 } from "react-icons/fa";
+import { GrView } from "react-icons/gr";
 import { IoCamera } from "react-icons/io5";
 import { useAuthStore } from "../../store/auth.store";
 import { useState } from "react";
@@ -11,7 +12,7 @@ import { useState } from "react";
 // eslint-disable-next-line react/prop-types
 const Profile = ({ isOpen, onClose }) => {
   const [showPhotoOptions, setShowPhotoOptions] = useState(false);
-  const { authUser } = useAuthStore();
+  const { authUser, showProfilePicModal } = useAuthStore();
 
   if (!isOpen) return null;
   return (
@@ -41,6 +42,10 @@ const Profile = ({ isOpen, onClose }) => {
               </button>
               {showPhotoOptions ? (
                 <div className="absolute -right-36 top-1 space-y-2 py-3 bg-sky-50 shadow-md shadow-slate-400">
+                  <button className="flex gap-2 px-2" onClick={showProfilePicModal}>
+                    <GrView className="text-xl" />
+                    <p>View photo</p>
+                  </button>
                   <button className="flex gap-2 px-2">
                     <FaRegFolderOpen className="text-xl" />
                     <p>Upload photo</p>
