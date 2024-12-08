@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import User from "../models/user.model.js";
-import { generateToken } from "../lib/utils.js";
+import { generateToken, updateAbout, updateContact, updateName, updateProfilePic } from "../lib/utils.js";
 import Contact from "../models/contact.model.js";
 
 export const signup = async (req, res) => {
@@ -22,8 +22,6 @@ export const signup = async (req, res) => {
       email,
       contactList: [{ userId: "6753ecc116b9f58330b56a79" }],
     });
-
-    console.log(newContact._id);
 
     if (newContact) {
       const newUser = new User({
@@ -98,3 +96,23 @@ export const checkAuth = (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const updateProfile = (req, res) => {
+  const { type: typeOfUpdate } = req.params
+  switch (typeOfUpdate) {
+    case "profile-pic":
+      return updateProfilePic(req, res);
+
+    case "name":
+      return updateName(req, res);
+
+    case "about":
+      return updateAbout(req, res);
+
+    case "contact":
+      return updateContact(req, res);
+
+    default:
+      return res.status(400).json({ error: "Invalid update type" });
+  }
+}

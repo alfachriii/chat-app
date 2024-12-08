@@ -8,12 +8,39 @@ import { GrView } from "react-icons/gr";
 import { IoCamera } from "react-icons/io5";
 import { useAuthStore } from "../../store/auth.store";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 // eslint-disable-next-line react/prop-types
 const Profile = ({ isOpen, onClose }) => {
   const [showPhotoOptions, setShowPhotoOptions] = useState(false);
-  const { authUser, showProfilePicModal } = useAuthStore();
+  const { authUser, showProfilePicModal, setProfilePicUrl, profilePicUrl, updateProfile, isUpdateProfilePic } = useAuthStore();
+  const [selectedImg, setSelectedImg] = useState(null);
 
+  const handleShowProfilePic = () => {
+    setProfilePicUrl(authUser.profilePic);
+    
+    
+    showProfilePicModal();
+  };
+
+  const handleImageUpload = async (e) => {
+    const imageFile = e.target.files[0];
+    if (!imageFile) return;
+
+    if(imageFile.size > 2005000) return toast.error("Max file size 2MB")
+
+    const reader = new FileReader();
+
+    reader.readAsDataURL(imageFile);
+
+    reader.onload = async () => {
+      const base64Image = reader.result;
+      setSelectedImg(base64Image);
+      await updateProfile({ profilePic: base64Image });
+    };
+  };
+
+  console.log(authUser.profilePic)
   if (!isOpen) return null;
   return (
     <div className="flex flex-col w-full">
@@ -29,7 +56,7 @@ const Profile = ({ isOpen, onClose }) => {
         <div className="w-full flex py-7 items-center justify-center bg-[#e4eef3]">
           <div className="relative">
             <img
-              src={authUser.profilePic || "/avatar.png"}
+              src={selectedImg || authUser.profilePic || "/avatar.png"}
               alt=""
               className="size-44 rounded-full"
             />
@@ -42,14 +69,25 @@ const Profile = ({ isOpen, onClose }) => {
               </button>
               {showPhotoOptions ? (
                 <div className="absolute -right-36 top-1 space-y-2 py-3 bg-sky-50 shadow-md shadow-slate-400">
-                  <button className="flex gap-2 px-2" onClick={showProfilePicModal}>
+                  <button
+                    className="flex gap-2 px-2"
+                    onClick={handleShowProfilePic}
+                  >
                     <GrView className="text-xl" />
                     <p>View photo</p>
                   </button>
-                  <button className="flex gap-2 px-2">
+                  <label className="flex gap-2 px-2 cursor-pointer">
                     <FaRegFolderOpen className="text-xl" />
+                    <input
+                  type="file"
+                  id="avatar-upload"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  // disabled={isUpdatingProfile}
+                />
                     <p>Upload photo</p>
-                  </button>
+                  </label>
                   <button className="flex gap-2 px-2 pt-2 border-t border-slate-400">
                     <FaRegTrashAlt className="text-xl" />
                     <p>Delete photo</p>

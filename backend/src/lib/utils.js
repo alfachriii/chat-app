@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { config } from "dotenv";
 import User from "../models/user.model.js";
+import cloudinary from "./cloudinary.js";
 config();
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -27,3 +28,37 @@ export const findUsersByIds = async (userIds) => {
     console.error("Error saat mencari data:", err);
   }
 };
+
+export const updateName = async (req, res) => {
+
+}
+
+export const updateProfilePic = async (req, res) => {
+  try {
+    const { profilePic } = req.body
+    const userId = req.user._id
+    
+    if(!profilePic) return res.status(400).json({ message: "Profile pic is required"})
+    
+    const uploadResponse = await cloudinary.uploader.upload(profilePic)
+    const updateUser = await User.findByIdAndUpdate(
+      userId,
+      { profilePic: uploadResponse.secure_url },
+      { new: true }
+    )
+
+    res.status(200).json(updateUser)
+  } catch (error) {
+    console.log("Error in update profile pic: ", error)
+    res.status(500).json({ message: "Internal servel error" })
+  }
+}
+
+export const updateAbout = async (req, res) => {
+
+}
+
+export const updateContact = async (req, res) => {
+
+}
+

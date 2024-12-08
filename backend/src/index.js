@@ -11,7 +11,7 @@ const app = express()
 const PORT = process.env.PORT
 const BASE_CLIENT_URL = process.env.BASE_CLIENT_URL
 
-app.use(json())
+app.use(json({ limit: "50mb" }))
 app.use(cors({
     origin: BASE_CLIENT_URL,
     credentials: true

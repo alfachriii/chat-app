@@ -7,7 +7,10 @@ export const useAuthStore = create((set) => ({
     isSigningUp: false,
     isLoggingIn: false,
     isCheckingAuth: true,
+    isUpdateProfilePic: false,
 
+    profilePicUrl: "",
+    setProfilePicUrl: (url) => set({ profilePicUrl: url }),
     profilePicModal: false,
     showProfilePicModal: () => set({ profilePicModal: true }),
     closeProfilePicModal: () => set({ profilePicModal: false }),
@@ -58,6 +61,20 @@ export const useAuthStore = create((set) => ({
             toast.success("Logged out succesfully")
         } catch (error) {
             toast.error(error.response.data.message)
+        }
+    },
+
+    updateProfile: async (data) => {
+        set({ isUpdateProfilePic: true })
+        try {
+            const res = await api.post("/auth/update/profile-pic", data)
+            set({ authUser: res.data })
+            toast.success("Profile picture updated successfully")
+        } catch (error) {
+            console.log(error)
+            // toast.error(error)
+        } finally {
+            set({ isUpdateProfilePic: false })
         }
     }
 }));

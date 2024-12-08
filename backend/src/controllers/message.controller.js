@@ -11,7 +11,6 @@ export const getUsersInContact = async (req, res) => {
         });
 
         const contacts = await findUsersByIds(userIds)
-        console.log(contacts)
         res.status(200).json(contacts)
     } catch (error) {
         console.error("Error in getUserInContact: ", error.message)

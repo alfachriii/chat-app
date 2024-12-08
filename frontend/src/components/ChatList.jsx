@@ -12,7 +12,8 @@ const ChatList = () => {
 
   useEffect(() => {
     getContacts();
-  }, [getContacts]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [showOptions, setShowOptions] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
