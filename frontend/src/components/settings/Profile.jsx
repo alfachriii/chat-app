@@ -13,21 +13,26 @@ import toast from "react-hot-toast";
 // eslint-disable-next-line react/prop-types
 const Profile = ({ isOpen, onClose }) => {
   const [showPhotoOptions, setShowPhotoOptions] = useState(false);
-  const { authUser, showProfilePicModal, setProfilePicUrl, profilePicUrl, updateProfile, isUpdateProfilePic } = useAuthStore();
+  const {
+    authUser,
+    showProfilePicModal,
+    setSelectedProfilePic,
+    updateProfilePic,
+    deleteProfilePic,
+    isUpdateProfilePic,
+  } = useAuthStore();
   const [selectedImg, setSelectedImg] = useState(null);
 
   const handleShowProfilePic = () => {
-    setProfilePicUrl(authUser.profilePic);
-    
-    
+    setSelectedProfilePic("authUser");
     showProfilePicModal();
   };
 
   const handleImageUpload = async (e) => {
-    const imageFile = e.target.files[0];
+    let imageFile = e.target.files[0];
     if (!imageFile) return;
 
-    if(imageFile.size > 2005000) return toast.error("Max file size 2MB")
+    if (imageFile.size > 2005000) return toast.error("Max file size 2MB");
 
     const reader = new FileReader();
 
@@ -36,11 +41,17 @@ const Profile = ({ isOpen, onClose }) => {
     reader.onload = async () => {
       const base64Image = reader.result;
       setSelectedImg(base64Image);
-      await updateProfile({ profilePic: base64Image });
+      await updateProfilePic({ profilePic: base64Image });
     };
+
+    imageFile = null
   };
 
-  console.log(authUser.profilePic)
+  const handleDeleteProfilePic = () => {
+    deleteProfilePic()
+    setSelectedImg("/avatar.png")
+  }
+
   if (!isOpen) return null;
   return (
     <div className="flex flex-col w-full">
@@ -55,11 +66,19 @@ const Profile = ({ isOpen, onClose }) => {
       <div className="overflow-y-auto">
         <div className="w-full flex py-7 items-center justify-center bg-[#e4eef3]">
           <div className="relative">
-            <img
-              src={selectedImg || authUser.profilePic || "/avatar.png"}
-              alt=""
-              className="size-44 rounded-full"
-            />
+            <button
+              onClick={handleShowProfilePic}
+              className="relative size-44 rounded-full shadow-lg shadow-slate-300"
+            >
+              <img
+                src={selectedImg || authUser.profilePic || "/avatar.png"}
+                alt=""
+                className="size-44 rounded-full"
+              />
+              {isUpdateProfilePic ? (
+                <div className="absolute top-0 right-0 size-full flex items-center justify-center rounded-full bg-slate-500 opacity-80 animate-pulse"></div>
+              ) : null}
+            </button>
             <div className="relative">
               <button
                 className="absolute bottom-0 right-0 p-2 rounded-full bg-sky-50 cursor-pointer"
@@ -79,16 +98,19 @@ const Profile = ({ isOpen, onClose }) => {
                   <label className="flex gap-2 px-2 cursor-pointer">
                     <FaRegFolderOpen className="text-xl" />
                     <input
-                  type="file"
-                  id="avatar-upload"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  // disabled={isUpdatingProfile}
-                />
+                      type="file"
+                      id="avatar-upload"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={isUpdateProfilePic}
+                    />
                     <p>Upload photo</p>
                   </label>
-                  <button className="flex gap-2 px-2 pt-2 border-t border-slate-400">
+                  <button
+                    className="flex gap-2 px-2 pt-2 border-t border-slate-400"
+                    onClick={handleDeleteProfilePic}
+                  >
                     <FaRegTrashAlt className="text-xl" />
                     <p>Delete photo</p>
                   </button>

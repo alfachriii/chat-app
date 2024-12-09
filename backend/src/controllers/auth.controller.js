@@ -1,7 +1,8 @@
 import bcrypt from "bcryptjs";
 import User from "../models/user.model.js";
-import { generateToken, updateAbout, updateContact, updateName, updateProfilePic } from "../lib/utils.js";
+import { generateToken, getCloudinaryUrlId, updateAbout, updateContact, updateName, updateProfilePic } from "../lib/utils.js";
 import Contact from "../models/contact.model.js";
+import cloudinary from "../lib/cloudinary.js";
 
 export const signup = async (req, res) => {
   const { name, email, password } = req.body;
@@ -114,5 +115,23 @@ export const updateProfile = (req, res) => {
 
     default:
       return res.status(400).json({ error: "Invalid update type" });
+  }
+}
+
+export const deleteProfilePic = async (req, res) => {
+  const profilePicUrl = req.user.profilePic
+  const userId = req.user._id
+  const imageId = getCloudinaryUrlId(profilePicUrl) 
+  try {
+    await cloudinary.api.delete_resources(imageId, { type: "upload", resource_type: "image" })
+    const updateUser = await User.findByIdAndUpdate(
+      userId,
+      { profilePic: "" } 
+    )
+
+    res.status(200).json(updateUser)
+  } catch (error) { 
+    res.status(500).json({ message: "Internal server error"})
+    console.log("Error on deleteProfilePic controller: ", error)
   }
 }

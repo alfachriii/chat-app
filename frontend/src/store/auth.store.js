@@ -1,6 +1,7 @@
 import { create } from "zustand"
 import { api } from "../lib/axios"
 import toast from "react-hot-toast"
+import { IoEarSharp } from "react-icons/io5";
 
 export const useAuthStore = create((set) => ({
     authUser: null,
@@ -9,8 +10,8 @@ export const useAuthStore = create((set) => ({
     isCheckingAuth: true,
     isUpdateProfilePic: false,
 
-    profilePicUrl: "",
-    setProfilePicUrl: (url) => set({ profilePicUrl: url }),
+    selectedProfilePic: "",
+    setSelectedProfilePic: (user) => set({ selectedProfilePic: user }),
     profilePicModal: false,
     showProfilePicModal: () => set({ profilePicModal: true }),
     closeProfilePicModal: () => set({ profilePicModal: false }),
@@ -64,15 +65,29 @@ export const useAuthStore = create((set) => ({
         }
     },
 
-    updateProfile: async (data) => {
+    updateProfilePic: async (data) => {
         set({ isUpdateProfilePic: true })
         try {
             const res = await api.post("/auth/update/profile-pic", data)
             set({ authUser: res.data })
             toast.success("Profile picture updated successfully")
         } catch (error) {
-            console.log(error)
-            // toast.error(error)
+            console.log("Error while update profile pic on auth store", error)
+            toast.error("Error while update profile picture.")
+        } finally {
+            set({ isUpdateProfilePic: false })
+        }
+    },
+    
+    deleteProfilePic: async () => {
+        set({ isUpdateProfilePic: true })
+        try {
+            const res = await api.delete("/auth/delete/profile-pic")
+            set({ authUser: res.data })
+            toast.success("Profile picture removed.")
+        } catch (error) {
+            console.log("Error while delete profile pic on auth store", error)
+            toast.error("Error while delete profile pic.")
         } finally {
             set({ isUpdateProfilePic: false })
         }

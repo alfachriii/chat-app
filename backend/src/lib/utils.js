@@ -62,3 +62,8 @@ export const updateContact = async (req, res) => {
 
 }
 
+export const getCloudinaryUrlId = (url) => {
+  const idWithExt = url.split("/")[7] 
+  return idWithExt.split(".")[0]
+}
+
