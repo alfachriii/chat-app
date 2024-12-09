@@ -1,10 +1,11 @@
-import pp from "../assets/gua.jpeg";
 import { IoSendSharp } from "react-icons/io5";
 import { BsChatRightFill } from "react-icons/bs";
 import ContactInfo from "./ContactInfo";
 import { useState } from "react";
+import { useChatStore } from "../store/chat.store";
 
 const Chat = () => {
+  const { selectedUser } = useChatStore()
   const [showContactInfo, setShowContactInfo] = useState(false);
   const closeContactInfo = () => setShowContactInfo(false)
 
@@ -17,9 +18,9 @@ const Chat = () => {
           {/* Header */}
           <div className="w-full p-4 px-5 border-b cursor-pointer" onClick={() => setShowContactInfo(true)}>
             <div className="flex items-center gap-5">
-              <img src={pp} alt="" className="rounded-full size-12" />
+              <img src={selectedUser.profilePic || "/avatar.png"} alt="" className="rounded-full size-12" />
               <div className="flex flex-col">
-                <h4 className="text-sm font-semibold">John Doe</h4>
+                <h4 className="text-sm font-semibold">{selectedUser.name}</h4>
                 <h3 className="status text-xs text-slate-600">Online</h3>
               </div>
             </div>

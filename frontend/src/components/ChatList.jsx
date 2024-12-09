@@ -5,10 +5,14 @@ import Settings from "./settings/Settings";
 import { useAuthStore } from "../store/auth.store";
 import { LuMessageSquarePlus } from "react-icons/lu";
 import { useChatStore } from "../store/chat.store";
+import { useModalStore } from "../store/modal.store";
 
 const ChatList = () => {
   const { logout } = useAuthStore();
+  const { setSelectedUser } = useChatStore()
   const { getContacts, contacts } = useChatStore();
+
+  const { openModal } = useModalStore();
 
   useEffect(() => {
     getContacts();
@@ -21,8 +25,6 @@ const ChatList = () => {
     setShowSettings(false);
     setShowOptions(false);
   };
-
-  console.log(contacts);
 
   const handleLogout = (e) => {
     e.preventDefault();
@@ -74,6 +76,7 @@ const ChatList = () => {
               <div
                 key={user._id}
                 className="w-full h-16 py-10 p-2 flex items-center border-b cursor-pointer hover:bg-white"
+                onClick={() => setSelectedUser(user)}
               >
                 <img src={user.profilePic || "/avatar.png"} alt="" className="rounded-full size-14" />
                 <div className="ml-2 w-full">
@@ -86,7 +89,7 @@ const ChatList = () => {
               </div>
             ))}
           </div>
-          <div className="absolute bottom-5 right-10 p-4 bg-white shadow-lg shadow-slate-400 rounded-xl cursor-pointer">
+          <div className="absolute bottom-5 right-10 p-4 bg-white shadow-lg shadow-slate-400 rounded-xl cursor-pointer" onClick={() => openModal("contact")}>
             <LuMessageSquarePlus className="text-2xl text-sky-500" />
           </div>
         </div>

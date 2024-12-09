@@ -21,7 +21,6 @@ export const signup = async (req, res) => {
 
     const newContact = new Contact({
       email,
-      contactList: [{ userId: "6753ecc116b9f58330b56a79" }],
     });
 
     if (newContact) {

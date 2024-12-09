@@ -16,15 +16,17 @@ const Profile = ({ isOpen, onClose }) => {
   const {
     authUser,
     showProfilePicModal,
-    setSelectedProfilePic,
+    updateName,
+    updateAbout,
     updateProfilePic,
     deleteProfilePic,
-    isUpdateProfilePic,
+    isUpdateProfile,
   } = useAuthStore();
   const [selectedImg, setSelectedImg] = useState(null);
 
   const handleShowProfilePic = () => {
-    setSelectedProfilePic("authUser");
+    if (!authUser.profilePic)
+      return toast.error("No photo profile", { duration: 1000 });
     showProfilePicModal();
   };
 
@@ -44,13 +46,29 @@ const Profile = ({ isOpen, onClose }) => {
       await updateProfilePic({ profilePic: base64Image });
     };
 
-    imageFile = null
+    imageFile = null;
   };
 
   const handleDeleteProfilePic = () => {
-    deleteProfilePic()
-    setSelectedImg("/avatar.png")
-  }
+    deleteProfilePic();
+    setSelectedImg("/avatar.png");
+  };
+
+  // update name
+  const [formName, setFormName] = useState("");
+  const handleSubmitName = async (e) => {
+    e.preventDefault();
+    if(!formName) return toast.error("Name must not be empty")
+    await updateName(formName);
+  };
+
+  // update about
+  const [formAbout, setFormAbout] = useState("")
+  const handleSubmitAbout = async (e) => {
+    e.preventDefault();
+    if(!formAbout) return toast.error("Name must not be empty")
+    await updateAbout(formAbout);
+  };
 
   if (!isOpen) return null;
   return (
@@ -63,7 +81,7 @@ const Profile = ({ isOpen, onClose }) => {
           <h1 className="text-xl font-medium">Profile</h1>
         </div>
       </div>
-      <div className="overflow-y-auto">
+      <div className="max-h-[560px] overflow-y-auto">
         <div className="w-full flex py-7 items-center justify-center bg-[#e4eef3]">
           <div className="relative">
             <button
@@ -75,7 +93,7 @@ const Profile = ({ isOpen, onClose }) => {
                 alt=""
                 className="size-44 rounded-full"
               />
-              {isUpdateProfilePic ? (
+              {isUpdateProfile ? (
                 <div className="absolute top-0 right-0 size-full flex items-center justify-center rounded-full bg-slate-500 opacity-80 animate-pulse"></div>
               ) : null}
             </button>
@@ -103,7 +121,7 @@ const Profile = ({ isOpen, onClose }) => {
                       className="hidden"
                       accept="image/*"
                       onChange={handleImageUpload}
-                      disabled={isUpdateProfilePic}
+                      disabled={isUpdateProfile}
                     />
                     <p>Upload photo</p>
                   </label>
@@ -119,8 +137,12 @@ const Profile = ({ isOpen, onClose }) => {
             </div>
           </div>
         </div>
-        <div className="name">
-          <form action="" className="flex flex-col p-5 px-7 gap-5">
+        <div className="name relative">
+          <form
+            action=""
+            className="flex flex-col p-5 px-7 gap-5"
+            onSubmit={handleSubmitName}
+          >
             <label>
               <span className="font-medium text-sky-600">Your name</span>
             </label>
@@ -128,9 +150,12 @@ const Profile = ({ isOpen, onClose }) => {
               <input
                 type="text"
                 placeholder={authUser.name}
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
                 className="w-11/12 placeholder:text-slate-700 bg-transparent outline-none"
               />
-              <button>
+              {isUpdateProfile && <div className="absolute left-5 top-16 w-4/5 bg-slate-500 opacity-10 animate-pulse">sata</div>}
+              <button type="submit">
                 <FaCheck />
               </button>
             </div>
@@ -140,8 +165,8 @@ const Profile = ({ isOpen, onClose }) => {
             </span>
           </form>
         </div>
-        <div className="about">
-          <form action="" className="flex flex-col p-5 px-7 gap-5">
+        <div className="about relative">
+          <form action="" className="flex flex-col p-5 px-7 gap-5" onSubmit={handleSubmitAbout}>
             <label>
               <span className="font-medium text-sky-600">About</span>
             </label>
@@ -149,13 +174,29 @@ const Profile = ({ isOpen, onClose }) => {
               <input
                 type="text"
                 placeholder={authUser.about}
+                value={formAbout}
+                onChange={(e) => setFormAbout(e.target.value) }
                 className="w-11/12 placeholder:text-slate-700 bg-transparent outline-none"
               />
-              <button>
+              {isUpdateProfile && <div className="absolute left-5 top-16 w-4/5 bg-slate-500 opacity-10 animate-pulse">sata</div>}
+              <button type="submit">
                 <FaCheck />
               </button>
             </div>
           </form>
+        </div>
+        <div className="email flex flex-col p-5 px-7 gap-5">
+          <label>
+            <span className="font-medium text-sky-600">Email</span>
+          </label>
+          <div>
+            <input
+              type="text"
+              placeholder={authUser.email}
+              className="w-11/12 placeholder:text-slate-500 bg-transparent outline-none"
+              disabled
+            />
+          </div>
         </div>
       </div>
     </div>

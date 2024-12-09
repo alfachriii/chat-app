@@ -17,13 +17,13 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
     },
     contactId: {
-        type: String,
-        unique: true,
-        trim: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Contact",
+      trim: true,
     },
     about: {
       type: String,
-      default: "Hey there! I am using seechat"
+      default: "Hey there! I am using seechat",
     },
     profilePic: {
       type: String,
