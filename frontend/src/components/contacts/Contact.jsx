@@ -3,11 +3,12 @@ import { useChatStore } from "../../store/chat.store";
 import { useEffect } from "react";
 import { useModalStore } from "../../store/modal.store";
 import { useAuthStore } from "../../store/auth.store";
+import ChatListSkeleton from "../skeletons/ChatListSkeleton";
 
 // eslint-disable-next-line react/prop-types
 const Contact = ({ modal }) => {
-  const { updateContact } = useAuthStore()
-  const { getAllContacts, allContacts, setSelectedUser } =
+  const { updateContact } = useAuthStore();
+  const { getAllContacts, allContacts, setSelectedUser, isContactsLoading } =
     useChatStore();
   const { closeModal } = useModalStore();
 
@@ -49,7 +50,7 @@ const Contact = ({ modal }) => {
         </div>
       </div>
       {/* contacts list */}
-      <div className="w-full max-h-96 p-5 gap-5  flex flex-col overflow-y-auto">
+      <div className="w-full max-h-[500px] p-5 gap-5  flex flex-col overflow-y-auto">
         {/* <div className="options w-full">
           <div>
 
@@ -59,23 +60,27 @@ const Contact = ({ modal }) => {
           All contact on seechat
         </h4>
         {/* contacts list */}
-        {allContacts.map((user) => (
-          <div
-            key={user._id}
-            className="flex gap-5 items-center cursor-pointer"
-            onClick={() => handleStartChat(user)}
-          >
-            <img
-              src={user.profilePic || "/avatar.png"}
-              alt=""
-              className="size-14 rounded-full shadow-lg shadow-slate-300"
-            />
-            <div>
-              <h4 className="name text-base font-semibold">{user.name}</h4>
-              <h5 className="about text-xs">{user.about}</h5>
+        {isContactsLoading ? (
+          <ChatListSkeleton />
+        ) : (
+          allContacts.map((user) => (
+            <div
+              key={user._id}
+              className="flex gap-5 items-center cursor-pointer"
+              onClick={() => handleStartChat(user)}
+            >
+              <img
+                src={user.profilePic || "/avatar.png"}
+                alt=""
+                className="size-14 rounded-full shadow-lg shadow-slate-300"
+              />
+              <div>
+                <h4 className="name text-base font-semibold">{user.name}</h4>
+                <h5 className="about text-xs">{user.about}</h5>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

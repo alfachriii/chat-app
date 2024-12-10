@@ -2,22 +2,28 @@ import { IoClose } from "react-icons/io5";
 import { useAuthStore } from "../store/auth.store";
 import { useChatStore } from "../store/chat.store";
 import toast from "react-hot-toast";
+import { useModalStore } from "../store/modal.store";
 
 // eslint-disable-next-line react/prop-types
-const ContactInfo = ({ onClose }) => {
+const ContactInfo = () => {
   const { showProfilePicModal } = useAuthStore();
   const { selectedUser } = useChatStore();
+  const { modals, closeModal } = useModalStore()
+  const contactInfoModal = modals.find((modal) => modal.modalId === "contact-info");
+
 
   const handleShowProfilePic = () => {
     if(!selectedUser.profilePic) return toast.error("No photo profile", { duration: 1000 });
     showProfilePicModal()
   }
-
+  
+  if(!contactInfoModal) return null
+  
   return (
     <div className="w-full min-h-screen bg-[#e4eef3] border-l overflow-y-auto">
       {/* header */}
       <div className="w-full h-16 flex gap-4 px-4 items-center bg-sky-50">
-        <button onClick={onClose}>
+        <button onClick={() => closeModal("contact-info")}>
           <IoClose className="text-2xl" />
         </button>
         <h4 className="font-medium">Contact Info</h4>

@@ -10,7 +10,7 @@ import { useEffect } from "react";
 const HomePage = () => {
   const { selectedUser, setSelectedUser } = useChatStore();
   const { modals } = useModalStore();
-  const modal = modals.find((modal) => modal.modalId === "contact");
+  const contactModal = modals.find((modal) => modal.modalId === "contact");
 
   useEffect(() => {
     // Fungsi untuk menangani penekanan tombol "Esc"
@@ -35,7 +35,7 @@ const HomePage = () => {
       <ProfilePic />
       <div className="w-screen h-screen flex bg-sky-50 text-slate-700">
         <div className="w-2/5 h-full">
-          {modal ? <Contact modal={modal}/> : <ChatList />}
+          {contactModal ? <Contact modal={contactModal}/> : <ChatList />}
         </div>
         <div className="w-3/5 h-screen bg-[#e4eef3] text-slate-700">
           {selectedUser ? <Chat /> : <Intro />}

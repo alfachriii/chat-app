@@ -3,10 +3,13 @@ import { api } from "../lib/axios";
 import toast from "react-hot-toast";
 
 export const useChatStore = create((set, get) => ({
+  messages: [],
   contacts: [],
   allContacts: [],
   selectedUser: null,
   isContactsLoading: false,
+  isGetMessages: false,
+  isSendMessage: false,
 
   getContacts: async () => {
     set({ isContactsLoading: true });
@@ -24,13 +27,50 @@ export const useChatStore = create((set, get) => ({
     set({ isContactsLoading: true });
     try {
       const res = await api.get("messages/contacts/all-contact");
-      console.log(res);
       set({ allContacts: res.data });
     } catch (error) {
       toast.error("Error while get all contacts");
       console.log("Error while get all contact", error);
     } finally {
       set({ isContactsLoading: false });
+    }
+  },
+
+  getMessages: async (receiverId) => {
+    set({ isGetMessages: true })
+    try {
+      const res = await api.get(`/messages/get/${receiverId}`)
+      set({ messages: res.data })
+    } catch (error) {
+      console.log(error)
+      toast.error("Error while getting messages")
+    } finally {
+      set({ isGetMessages: false })
+    }
+  },
+
+  sendMessage: async (inputMessage, inputFile, receiverId) => {
+    //isOnGroup
+    set({ isSendMessage: true });
+    console.log(inputMessage)
+    try {
+      const data = {
+        data: {
+          receiverId: receiverId,
+          text: inputMessage,
+          file: {
+            data: inputFile
+          }
+        }
+      }
+      const res = await api.post("/messages/send/personal", data);
+      set({ messages: [...get().messages, res.data] });
+      toast.success("success");
+    } catch (error) {
+      console.log(error);
+      toast.error("Error while sending message");
+    } finally {
+      set({ isSendMessage: false });
     }
   },
 

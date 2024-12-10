@@ -66,7 +66,7 @@ const Profile = ({ isOpen, onClose }) => {
   const [formAbout, setFormAbout] = useState("")
   const handleSubmitAbout = async (e) => {
     e.preventDefault();
-    if(!formAbout) return toast.error("Name must not be empty")
+    if(!formAbout) return toast.error("About must not be empty")
     await updateAbout(formAbout);
   };
 
@@ -154,7 +154,7 @@ const Profile = ({ isOpen, onClose }) => {
                 onChange={(e) => setFormName(e.target.value)}
                 className="w-11/12 placeholder:text-slate-700 bg-transparent outline-none"
               />
-              {isUpdateProfile && <div className="absolute left-5 top-16 w-4/5 bg-slate-500 opacity-10 animate-pulse">sata</div>}
+              {isUpdateProfile && <div className="absolute left-5 top-16 w-4/5 bg-slate-300 opacity-10 animate-pulse">sata</div>}
               <button type="submit">
                 <FaCheck />
               </button>
@@ -178,7 +178,7 @@ const Profile = ({ isOpen, onClose }) => {
                 onChange={(e) => setFormAbout(e.target.value) }
                 className="w-11/12 placeholder:text-slate-700 bg-transparent outline-none"
               />
-              {isUpdateProfile && <div className="absolute left-5 top-16 w-4/5 bg-slate-500 opacity-10 animate-pulse">sata</div>}
+              {isUpdateProfile && <div className="absolute left-5 top-16 w-4/5 bg-slate-300 opacity-10 animate-pulse">sata</div>}
               <button type="submit">
                 <FaCheck />
               </button>

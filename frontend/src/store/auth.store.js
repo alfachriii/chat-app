@@ -121,12 +121,10 @@ export const useAuthStore = create((set) => ({
   },
 
   updateContact: async (email) => {
-    console.log("lcl")
     set({ isUpdateProfile: true });
     const data = { email: email };
     try {
       const res = await api.post("/auth/update/contact", data);
-      console.log(res)
       toast.success(res.data.message);
     } catch (error) {
     

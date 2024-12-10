@@ -6,11 +6,15 @@ import { LuLogOut } from "react-icons/lu";
 import Profile from "./Profile";
 import { useState } from "react";
 import { useAuthStore } from "../../store/auth.store";
+import { useModalStore } from "../../store/modal.store";
 
 // eslint-disable-next-line react/prop-types
-const Settings = ({ closeSettings }) => {
+const Settings = () => {
   const [showProfile, setShowProfile] = useState(false);
   const [hiddenSettings, setHiddenSettings] = useState(false);
+  const { closeModal, modals } = useModalStore()
+  const settingsModal = modals.find((modal) => modal.modalId === "settings");
+
   const openProfile = () => {
     setShowProfile(true);
     setHiddenSettings(true);
@@ -27,13 +31,14 @@ const Settings = ({ closeSettings }) => {
     logout();
   };
 
+  if(!settingsModal) return null
   return (
     <div>
       {!hiddenSettings ? (
         <div className="flex flex-col w-full">
           <div className="w-full flex justify-between">
             <div className="flex items-center gap-5 p-5">
-              <button className="p-2 rounded-full" onClick={closeSettings}>
+              <button className="p-2 rounded-full" onClick={() => closeModal("settings")}>
                 <FaArrowLeft className="cursor-pointer" />
               </button>
               <h1 className="text-xl font-medium">Settings</h1>
