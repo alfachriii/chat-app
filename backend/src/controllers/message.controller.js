@@ -4,6 +4,7 @@ import { findUsersByEmails, getMimeType } from "../lib/utils.js";
 import Contact from "../models/contact.model.js";
 import Message, { PersonalMessage } from "../models/message.model.js";
 import User from "../models/user.model.js";
+import { getReceiverSocketId, io } from "../lib/socket.js";
 
 export const getUsersInContact = async (req, res) => {
   try {
@@ -38,8 +39,6 @@ export const getPersonalMessages = async (req, res) => {
     const { id: userToChatId } = req.params;
     const myId = req.user._id;
 
-    console.log(userToChatId);
-
     if (!userToChatId) return res.status(400).json({ message: "Fill query" });
     const messages = await Message.find({
       __t: "personal",
@@ -66,13 +65,11 @@ export const sendMessage = async (req, res) => {
       try {
         let file;
 
-        console.log(data.file)
-        
         if (data.file.data) {
-          const mimeType = getMimeType(data.file.data)
-          const type = mimeType.split("/")[0]
-          console.log(mimeType)
-          console.log(type)
+          const mimeType = getMimeType(data.file.data);
+          const type = mimeType.split("/")[0];
+          console.log(mimeType);
+          console.log(type);
           const uploadResponse = await cloudinary.uploader.upload(
             data.file.data,
             { resource_type: type }
@@ -87,7 +84,6 @@ export const sendMessage = async (req, res) => {
             url: uploadResponse.secure_url,
           };
         }
-        console.log(file);
 
         const newMessage = new PersonalMessage({
           senderId,
@@ -97,8 +93,13 @@ export const sendMessage = async (req, res) => {
         });
 
         await newMessage.save();
+
+        const receiverSocketId = getReceiverSocketId(data.receiverId);
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit("newMessage", newMessage);
+        }
+        
         return res.status(200).json(newMessage);
-        return res.status(200)
       } catch (error) {
         console.log("Error on send message controller: ", error);
         return res.status(500).json({ message: "Internal server error" });

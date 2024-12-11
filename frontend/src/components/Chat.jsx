@@ -9,7 +9,7 @@ import { formatMessageTime } from "../lib/utils";
 import ReactPlayer from "react-player";
 
 const Chat = () => {
-  const { selectedUser, messages, getMessages, sendMessage } = useChatStore();
+  const { selectedUser, messages, getMessages, sendMessage, subscribeToChat, unsubscribeFromChat } = useChatStore();
   const { openModal, modals } = useModalStore();
   const { authUser } = useAuthStore();
   const contactInfoModel = modals.find(
@@ -20,9 +20,11 @@ const Chat = () => {
 
   useEffect(() => {
     getMessages(selectedUser._id);
-    return;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedUser]);
+    subscribeToChat()
+
+    return () => unsubscribeFromChat();
+     
+  }, [selectedUser, getMessages, subscribeToChat, unsubscribeFromChat]);
 
   useEffect(() => {
     if (messageEndRef.current && messages) {
@@ -142,7 +144,7 @@ const Chat = () => {
           {/* Chat Input */}
           <div className="relative text w-full min-h-20 pb-1 border-t-2 flex flex-col justify-center">
             {inputFile && (
-              <div className="absolute -top-72 left-5  p-4 flex flex-col items-end bg-[#e4eef3] animate-fade-up">
+              <div className="absolute -top-72 left-5  p-4 flex flex-col items-end bg-[#e4eef3] animate-flip-up animate-duration-[500ms]">
                 <button onClick={() => setInputFile("")}>
                   <IoClose className="text-2xl mb-2" />
                 </button>

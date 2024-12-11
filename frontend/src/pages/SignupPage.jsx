@@ -93,7 +93,7 @@ const SignupPage = () => {
           >
             {isSigningUp ? (
               <>
-                <div className="w-7 h-7 border-2 border-gray-300 border-t-slate-600 rounded-full animate-spin"></div>
+                <span className="loading loading-dots loading-sm"></span>
               </>
             ) : (
               "Create Account"

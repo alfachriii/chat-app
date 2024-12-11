@@ -8,11 +8,14 @@ import { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 
 function App() {
-  const { authUser, checkAuth } = useAuthStore();
+  const { authUser, checkAuth, socket } = useAuthStore();
 
   useEffect(() => {
     checkAuth();
-  }, [checkAuth]);
+    socket?.on("connect_error", (error) => {
+      console.error("Connection error:", error);
+    });
+  }, [checkAuth, socket]);
 
   return (
     <>

@@ -1,13 +1,17 @@
 import { create } from "zustand";
 import { api } from "../lib/axios";
 import toast from "react-hot-toast";
+import { io } from "socket.io-client";
 
-export const useAuthStore = create((set) => ({
+const BASE_URL_SERVER = "http://localhost:3001"
+
+export const useAuthStore = create((set, get) => ({
   authUser: null,
   isSigningUp: false,
   isLoggingIn: false,
   isCheckingAuth: true,
   isUpdateProfile: false,
+  socket: null,
 
   profilePicModal: false,
   showProfilePicModal: () => set({ profilePicModal: true }),
@@ -18,6 +22,8 @@ export const useAuthStore = create((set) => ({
       const res = await api.get("/auth/check");
 
       set({ authUser: res.data });
+
+      get().connectSocket();
     } catch (error) {
       console.log("Error in checkAuth: ", error);
       set({ authUser: null });
@@ -32,6 +38,8 @@ export const useAuthStore = create((set) => ({
       const res = await api.post("/auth/signup", data);
       set({ authUser: res.data });
       toast.success("Account created successfully");
+
+      get().connectSocket();
     } catch (error) {
       toast.error(error.response.data.message);
     } finally {
@@ -45,6 +53,8 @@ export const useAuthStore = create((set) => ({
       const res = await api.post("/auth/login", data);
       set({ authUser: res.data });
       toast.success("Logged in successfully");
+
+      get().connectSocket();
     } catch (error) {
       toast.error(error.response.data.message);
     } finally {
@@ -57,38 +67,40 @@ export const useAuthStore = create((set) => ({
       await api.post("/auth/logout");
       set({ authUser: null });
       toast.success("Logged out succesfully");
+
+      get().diconnectSocket();
     } catch (error) {
       toast.error(error.response.data.message);
     }
   },
 
   updateName: async (newName) => {
-    set({ isUpdateProfile: true })
-    const data = { newName: newName }
+    set({ isUpdateProfile: true });
+    const data = { newName: newName };
     try {
-        const res = await api.post("/auth/update/name", data)
-        set({ authUser: res.data.user })
-        toast.success(res.data.message)
+      const res = await api.post("/auth/update/name", data);
+      set({ authUser: res.data.user });
+      toast.success(res.data.message);
     } catch (error) {
-        console.log(error)
-        toast.error("Error while updating name.")
+      console.log(error);
+      toast.error("Error while updating name.");
     } finally {
-        set({ isUpdateProfile: false })
+      set({ isUpdateProfile: false });
     }
   },
 
   updateAbout: async (newAbout) => {
-    set({ isUpdateProfile: true })
-    const data = { newAbout: newAbout }
+    set({ isUpdateProfile: true });
+    const data = { newAbout: newAbout };
     try {
-        const res = await api.post("/auth/update/about", data)
-        set({ authUser: res.data.user })
-        toast.success(res.data.message)
+      const res = await api.post("/auth/update/about", data);
+      set({ authUser: res.data.user });
+      toast.success(res.data.message);
     } catch (error) {
-        console.log(error)
-        toast.error("Error while updating about.")
+      console.log(error);
+      toast.error("Error while updating about.");
     } finally {
-        set({ isUpdateProfile: false })
+      set({ isUpdateProfile: false });
     }
   },
 
@@ -127,11 +139,32 @@ export const useAuthStore = create((set) => ({
       const res = await api.post("/auth/update/contact", data);
       toast.success(res.data.message);
     } catch (error) {
-    
       toast.error("Error while update contact.");
       console.log(error);
     } finally {
       set({ isUpdateProfile: false });
     }
+  },
+
+  connectSocket: () => {
+    const { authUser } = get();
+    if (!authUser || get().socket?.connect) return;
+
+    console.log(BASE_URL_SERVER)
+
+    const socket = io(BASE_URL_SERVER, {
+      query: {
+        userId: authUser._id,
+      },
+    });
+    socket.connect();
+
+    socket.on("connect", () => {
+      console.log("Connected to server:", socket.id);
+    });
+    set({ socket: socket });
+  },
+  diconnectSocket: () => { 
+    if (get().socket?.connect) get().socket.disconnect();
   },
 }));

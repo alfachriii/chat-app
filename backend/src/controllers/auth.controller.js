@@ -97,6 +97,16 @@ export const checkAuth = (req, res) => {
   }
 };
 
+export const checkStatusUser = (req, res) => {
+  try {
+    const { id: userId } = req.params
+    
+    
+  } catch (error) {
+    
+  }
+}
+
 export const updateProfile = (req, res) => {
   const { type: typeOfUpdate } = req.params
   switch (typeOfUpdate) {

@@ -5,9 +5,9 @@ import authRoutes from "./routes/auth.route.js"
 import messageRoutes from "./routes/message.route.js"
 import dotenv from "dotenv"
 import { connectDB } from "./lib/db.js"
+import { app, server } from "./lib/socket.js"
 dotenv.config()
 
-const app = express()
 const PORT = process.env.PORT
 const BASE_CLIENT_URL = process.env.BASE_CLIENT_URL
 
@@ -20,7 +20,7 @@ app.use(cookieParser())
 app.use("/api/auth", authRoutes)
 app.use("/api/messages", messageRoutes)
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log("server running on port: ", PORT)
     connectDB()
 })
