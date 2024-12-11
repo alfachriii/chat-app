@@ -1,4 +1,4 @@
-import { IoCamera, IoSendSharp } from "react-icons/io5";
+import { IoCamera, IoClose, IoSendSharp } from "react-icons/io5";
 import ContactInfo from "./ContactInfo";
 import { useChatStore } from "../store/chat.store";
 import { useModalStore } from "../store/modal.store";
@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../store/auth.store";
 import { formatMessageTime } from "../lib/utils";
+import ReactPlayer from "react-player";
 
 const Chat = () => {
   const { selectedUser, messages, getMessages, sendMessage } = useChatStore();
@@ -14,6 +15,8 @@ const Chat = () => {
   const contactInfoModel = modals.find(
     (modal) => modal.modalId === "contact-info"
   );
+  const messageEndRef = useRef(null);
+  const inputMessageRef = useRef(null);
 
   useEffect(() => {
     getMessages(selectedUser._id);
@@ -21,9 +24,16 @@ const Chat = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedUser]);
 
+  useEffect(() => {
+    if (messageEndRef.current && messages) {
+      messageEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
   const fileInputRef = useRef(null);
 
-  const [inputFile, setInputFile] = useState(null)
+  const [inputFile, setInputFile] = useState("");
+  const [typeFile, setTypeFile] = useState("");
   const [inputMessage, setInputMessage] = useState("");
 
   const handleInputFile = (e) => {
@@ -32,21 +42,29 @@ const Chat = () => {
 
     if (file.size > 21000000) return toast.error("Max file size 20MB");
 
+    setTypeFile(file.type.split("/")[0]);
+
     const reader = new FileReader();
 
     reader.onloadend = async () => {
-      setInputFile(reader.result)
+      setInputFile(reader.result);
     };
     reader.readAsDataURL(file);
   };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!inputMessage && !inputMessage) return;
+    if (!inputMessage && !inputFile) return;
+
+    // if (inputMessageRef.current) {
+    //   inputMessageRef.current.focus();
+    // }
 
     await sendMessage(inputMessage, inputFile, selectedUser._id);
+    inputMessageRef.current.value = inputMessageRef.current.defaultValue;
+    setInputFile("");
+    setInputMessage("");
   };
-
 
   if (!selectedUser) return null;
 
@@ -75,9 +93,15 @@ const Chat = () => {
           </div>
           {/* Chat container */}
           <div className="w-full h-full overflow-y-auto space-y-4 bg-sky-50 p-5">
+            {!messages.lenght < 1 ? (
+              <p className="text-xs text-slate-400 text-center">
+                Start new message.
+              </p>
+            ) : null}
             {messages.map((message) => (
               <div
                 key={message._id}
+                ref={messageEndRef}
                 className={`chat ${
                   message.senderId === authUser._id ? "chat-end" : "chat-start"
                 }`}
@@ -89,7 +113,20 @@ const Chat = () => {
                       : "bg-[#e4eef3]"
                   } text-slate-700`}
                 >
-                  {message.file && <img src={message.file.url} className="size-72 mt-2 mb-2" />}
+                  {" "}
+                  {message?.file?.sentAs === "video" && (
+                    <div>
+                      <ReactPlayer
+                        url={message.file.url}
+                        controls={true} // show controls
+                        width="375px"
+                        height="250px"
+                      />
+                    </div>
+                  )}
+                  {message?.file?.sentAs === "image" && (
+                    <img src={message.file.url} className="size-72 mt-2 mb-2" />
+                  )}
                   {message.text && (
                     <p className="text-sm z-10 break-words text-start w-full flex items-center justify-between">
                       {message.text}{" "}
@@ -103,29 +140,59 @@ const Chat = () => {
             ))}
           </div>
           {/* Chat Input */}
-          <div className="text w-full h-24 pb-1 border-t-2 flex justify-center gap-5 items-center">
-            <div className="relative w-10/12">
-              <input
-                type="text"
-                placeholder="Type a message"
-                value={inputMessage.text}
-                onChange={(e) => setInputMessage(e.target.value)}
-                className="p-3 outline-none w-full rounded-md"
-              />
-              <input
-                id="input-file-message"
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                onChange={handleInputFile}
-              />
-              <button onClick={() => fileInputRef.current.click()}>
-                <IoCamera className="absolute top-2 right-3 text-3xl" />
+          <div className="relative text w-full min-h-20 pb-1 border-t-2 flex flex-col justify-center">
+            {inputFile && (
+              <div className="absolute -top-72 left-5  p-4 flex flex-col items-end bg-[#e4eef3] animate-fade-up">
+                <button onClick={() => setInputFile("")}>
+                  <IoClose className="text-2xl mb-2" />
+                </button>
+                <div className="bg-sky-50 size-56 flex justify-center items-center">
+                  {typeFile === "image" ? (
+                    <img src={inputFile} alt="" className="w-auto h-56" />
+                  ) : (
+                    <div className="w-auto h-56">
+                      <video
+                        src={inputFile}
+                        className="w-full h-full"
+                        controls={true}
+                      ></video>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            <form
+              action=""
+              className="w-full flex justify-center gap-5 items-center"
+              onSubmit={handleSendMessage}
+            >
+              <div className="relative w-10/12">
+                <input
+                  type="text"
+                  ref={inputMessageRef}
+                  placeholder="Type a message"
+                  value={inputMessage.text}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  className="p-3 outline-none w-full rounded-md"
+                />
+                <input
+                  id="input-file-message"
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={handleInputFile}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current.click()}
+                >
+                  <IoCamera className="absolute top-2 right-3 text-3xl" />
+                </button>
+              </div>
+              <button type="submit">
+                <IoSendSharp className="text-2xl text-slate-600" />
               </button>
-            </div>
-            <button onClick={handleSendMessage}>
-              <IoSendSharp className="text-2xl text-slate-600" />
-            </button>
+            </form>
           </div>
         </div>
       )}

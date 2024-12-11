@@ -133,3 +133,8 @@ export const getCloudinaryUrlId = (url) => {
   const idWithExt = url.split("/")[7];
   return idWithExt.split(".")[0];
 };
+
+export const getMimeType = (base64) => {
+  const un = base64.split(";")[0]
+  return un.split(":")[1]
+}

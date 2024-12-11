@@ -59,7 +59,7 @@ export const useChatStore = create((set, get) => ({
           receiverId: receiverId,
           text: inputMessage,
           file: {
-            data: inputFile
+           data: inputFile
           }
         }
       }
