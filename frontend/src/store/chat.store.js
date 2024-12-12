@@ -11,6 +11,7 @@ export const useChatStore = create((set, get) => ({
   isContactsLoading: false,
   isGetMessages: false,
   isSendMessage: false,
+  isOnline: false,
 
   getContacts: async () => {
     set({ isContactsLoading: true });
@@ -38,32 +39,32 @@ export const useChatStore = create((set, get) => ({
   },
 
   getMessages: async (receiverId) => {
-    set({ isGetMessages: true })
+    set({ isGetMessages: true });
     try {
-      const res = await api.get(`/messages/get/${receiverId}`)
-      set({ messages: res.data })
+      const res = await api.get(`/messages/get/${receiverId}`);
+      set({ messages: res.data });
     } catch (error) {
-      console.log(error)
-      toast.error("Error while getting messages")
+      console.log(error);
+      toast.error("Error while getting messages");
     } finally {
-      set({ isGetMessages: false })
+      set({ isGetMessages: false });
     }
   },
 
   sendMessage: async (inputMessage, inputFile, receiverId) => {
     //isOnGroup
     set({ isSendMessage: true });
-    console.log(inputMessage)
+    console.log(inputMessage);
     try {
       const data = {
         data: {
           receiverId: receiverId,
           text: inputMessage,
           file: {
-           data: inputFile
-          }
-        }
-      }
+            data: inputFile,
+          },
+        },
+      };
       const res = await api.post("/messages/send/personal", data);
       set({ messages: [...get().messages, res.data] });
       toast.success("success");
@@ -77,7 +78,9 @@ export const useChatStore = create((set, get) => ({
 
   resetAllContacts: () => set({ allContacts: [] }),
   setSelectedUser: (data) => {
-    get().selectedUser === data
+    const currentSelectedUserData = { ...get().selectedUser }
+    delete currentSelectedUserData.status
+    currentSelectedUserData === data
       ? set({ selectedUser: null })
       : set({ selectedUser: data });
   },
@@ -89,18 +92,31 @@ export const useChatStore = create((set, get) => ({
     const socket = useAuthStore.getState().socket;
 
     socket.on("newMessage", (newMessage) => {
-      const isMessageSentFromSelectedUser = newMessage.senderId === selectedUser._id;
+      const isMessageSentFromSelectedUser =
+        newMessage.senderId === selectedUser._id;
       if (!isMessageSentFromSelectedUser) return;
 
       set({
         messages: [...get().messages, newMessage],
       });
     });
+
+    const targetUserId = get().selectedUser._id;
+
+    socket.on("userStatusChange", ({ userId, isOnline }) => {
+      console.log(userId, targetUserId)
+      console.log("status change")
+      if (userId === targetUserId) {
+        console.log("online")
+        // set({ selectedUser: {...selectedUser, status: isOnline }})
+        set({ isOnline: isOnline });
+      }
+    });
   },
 
   unsubscribeFromChat: () => {
     const socket = useAuthStore.getState().socket;
-    socket.off("newMessage");
+    socket?.off("newMessage");
   },
 
 }));

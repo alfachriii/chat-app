@@ -6,8 +6,10 @@ import { useChatStore } from "../store/chat.store";
 import Contact from "../components/contacts/Contact";
 import { useModalStore } from "../store/modal.store";
 import { useEffect } from "react";
+import { useAuthStore } from "../store/auth.store";
 
 const HomePage = () => {
+  const { connectSocket, disconnectSocket } = useAuthStore()
   const { selectedUser, setSelectedUser } = useChatStore();
   const { modals } = useModalStore();
   const contactModal = modals.find((modal) => modal.modalId === "contact");
@@ -28,7 +30,37 @@ const HomePage = () => {
     return () => {
       window.removeEventListener('keydown', handleEscKey);
     };
-  }, [])
+  }, [setSelectedUser])
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        console.log("Aktif")
+        connectSocket()
+        // Logika ketika tab aktif
+      } else {
+        disconnectSocket()
+        // Logika ketika tab tidak aktif
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Clean-up event listener
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
+
+    // Tambahkan event listener
+    connectSocket()
+
+    // Bersihkan event listener saat komponen unmount
+    return
+  }, [connectSocket]);
+
 
   return (
     <>

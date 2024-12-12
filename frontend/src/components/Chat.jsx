@@ -9,9 +9,9 @@ import { formatMessageTime } from "../lib/utils";
 import ReactPlayer from "react-player";
 
 const Chat = () => {
-  const { selectedUser, messages, getMessages, sendMessage, subscribeToChat, unsubscribeFromChat } = useChatStore();
+  const { selectedUser, messages, getMessages, sendMessage, isOnline, subscribeToChat, unsubscribeFromChat } = useChatStore();
   const { openModal, modals } = useModalStore();
-  const { authUser } = useAuthStore();
+  const { authUser, socket, connectSocket } = useAuthStore();
   const contactInfoModel = modals.find(
     (modal) => modal.modalId === "contact-info"
   );
@@ -25,6 +25,40 @@ const Chat = () => {
     return () => unsubscribeFromChat();
      
   }, [selectedUser, getMessages, subscribeToChat, unsubscribeFromChat]);
+
+  useEffect(() => {
+    socket?.emit("checkStatus", selectedUser._id)
+  }, [selectedUser._id, socket])
+
+  // useEffect(() => {
+  //   const handleFocus = () => {
+  //     if (!socket || socket.connected) return;
+  //     connectSocket();
+  //   };
+
+  //   // Mendiskonekkan socket saat halaman kehilangan fokus
+  //   const handleBlur = () => {
+  //     if (socket && socket.connected) {
+  //       socket.disconnect();
+  //     }
+  //   };
+
+  //   // Menangani event focus dan blur
+  //   window.addEventListener("focus", handleFocus);
+  //   window.addEventListener("blur", handleBlur);
+
+  //   // Menghubungkan socket saat komponen dimuat
+  //   connectSocket();
+
+  //   // Membersihkan event listener saat komponen dibersihkan
+  //   return () => {
+  //     window.removeEventListener("focus", handleFocus);
+  //     window.removeEventListener("blur", handleBlur);
+  //     if (socket) {
+  //       socket.disconnect();
+  //     }
+  //   };
+  // }, [connectSocket, socket])
 
   useEffect(() => {
     if (messageEndRef.current && messages) {
@@ -68,6 +102,7 @@ const Chat = () => {
     setInputMessage("");
   };
 
+  console.log(isOnline)
   if (!selectedUser) return null;
 
   return (
@@ -89,7 +124,7 @@ const Chat = () => {
               />
               <div className="flex flex-col">
                 <h4 className="text-sm font-semibold">{selectedUser.name}</h4>
-                <h3 className="status text-xs text-slate-600">Online</h3>
+                <h3 className="status text-xs text-slate-600">{isOnline ? "Online" : `${selectedUser.lastSeen}`}</h3>
               </div>
             </div>
           </div>

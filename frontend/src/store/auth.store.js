@@ -23,7 +23,6 @@ export const useAuthStore = create((set, get) => ({
 
       set({ authUser: res.data });
 
-      get().connectSocket();
     } catch (error) {
       console.log("Error in checkAuth: ", error);
       set({ authUser: null });
@@ -68,7 +67,7 @@ export const useAuthStore = create((set, get) => ({
       set({ authUser: null });
       toast.success("Logged out succesfully");
 
-      get().diconnectSocket();
+      get().disconnectSocket();
     } catch (error) {
       toast.error(error.response.data.message);
     }
@@ -150,8 +149,6 @@ export const useAuthStore = create((set, get) => ({
     const { authUser } = get();
     if (!authUser || get().socket?.connect) return;
 
-    console.log(BASE_URL_SERVER)
-
     const socket = io(BASE_URL_SERVER, {
       query: {
         userId: authUser._id,
@@ -164,7 +161,9 @@ export const useAuthStore = create((set, get) => ({
     });
     set({ socket: socket });
   },
-  diconnectSocket: () => { 
+
+  disconnectSocket: () => { 
     if (get().socket?.connect) get().socket.disconnect();
+    set({ socket: null })
   },
 }));
