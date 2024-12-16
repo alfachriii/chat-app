@@ -131,9 +131,9 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  updateContact: async (email) => {
+  updateContact: async (userId) => {
     set({ isUpdateProfile: true });
-    const data = { email: email };
+    const data = { userId: userId };
     try {
       const res = await api.post("/auth/update/contact", data);
       toast.success(res.data.message);

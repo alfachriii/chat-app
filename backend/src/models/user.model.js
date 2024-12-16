@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema(
     },
     lastSeen: {
       type: String
-    }
+    },
   },
   { timestamps: true }
 );

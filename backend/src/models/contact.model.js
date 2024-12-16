@@ -2,15 +2,15 @@ import mongoose from "mongoose";
 
 const contactSchema = new mongoose.Schema(
   {
-    email: {
-      type: String,
+    user: { // Penting: gunakan _id yang sama dengan user
+      type: mongoose.Schema.Types.ObjectId,
       required: true,
-      unique: true,
+      ref: 'User' // Referensi balik ke model User (opsional, tapi disarankan)
     },
-    contactList: {
-      type: Array,
-      default: [{ email: "alfachri@email.com" }],
-    },
+    contactList: [{ // Array dari ObjectId yang mereferensikan User lain
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }],
   },
   { timestamps: true }
 );

@@ -2,10 +2,12 @@ import { create } from "zustand";
 import { api } from "../lib/axios";
 import toast from "react-hot-toast";
 import { useAuthStore } from "./auth.store";
+import { saveMessage, updateChat } from "../lib/utils";
 
 export const useChatStore = create((set, get) => ({
   messages: [],
-  contacts: [],
+  recentMessages: [],
+  currentChats: [],
   allContacts: [],
   selectedUser: null,
   isContactsLoading: false,
@@ -17,7 +19,15 @@ export const useChatStore = create((set, get) => ({
     set({ isContactsLoading: true });
     try {
       const res = await api.get("/messages/contacts");
-      set({ contacts: res.data });
+      set({ currentChats: res.data });
+
+
+      const authUser = useAuthStore.getState().authUser
+      // res.data.map((chat) => saveMessage({
+      //   chatId: `${authUser._id}_${chat._id}`
+
+      // }))
+
     } catch (error) {
       toast.error(error.response.data.message);
     } finally {
@@ -76,10 +86,39 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
+  getRecentMessages: async () => {
+    try {
+      const res = await api.get("/messages/recent");
+      set({ recentMessages: res.data });
+
+      const currentChats = get().currentChats
+      const authUser = useAuthStore.getState().authUser
+      // const chatIds = currentChats.map((chat) => chat._id)
+
+      currentChats.map((chat) => updateChat(`${authUser._id}_${chat.receiverId}`, chat))
+      // get().changeMessagesStatus()
+    } catch (error) {
+      console.log(error);
+    }
+  },
+
+  changeMessagesStatus: () => {
+    const recentMessages = get().recentMessages;
+    console.log(Array.isArray(recentMessages));
+    const socket = useAuthStore.getState().socket;
+    const messageIds = Array.isArray(recentMessages)
+      ? recentMessages.map((message) => message._id)
+      : [];
+
+    if (messageIds.length > 0) {
+      socket.emit("messageDelivered", messageIds);
+    }
+  },
+
   resetAllContacts: () => set({ allContacts: [] }),
   setSelectedUser: (data) => {
-    const currentSelectedUserData = { ...get().selectedUser }
-    delete currentSelectedUserData.status
+    const currentSelectedUserData = { ...get().selectedUser };
+    delete currentSelectedUserData.status;
     currentSelectedUserData === data
       ? set({ selectedUser: null })
       : set({ selectedUser: data });
@@ -102,14 +141,12 @@ export const useChatStore = create((set, get) => ({
     });
 
     const targetUserId = get().selectedUser._id;
-
-    socket.on("userStatusChange", ({ userId, isOnline }) => {
-      console.log(userId, targetUserId)
-      console.log("status change")
+    socket.on("userStatusChange", ({ userId, isOnline, user }) => {
       if (userId === targetUserId) {
-        console.log("online")
-        // set({ selectedUser: {...selectedUser, status: isOnline }})
         set({ isOnline: isOnline });
+        if (user) {
+          set({ selectedUser: user });
+        }
       }
     });
   },
@@ -118,5 +155,4 @@ export const useChatStore = create((set, get) => ({
     const socket = useAuthStore.getState().socket;
     socket?.off("newMessage");
   },
-
 }));

@@ -6,7 +6,7 @@ const router = express.Router()
 
 router.post("/signup", signup)
 router.post("/login", login)
-router.post("/logout", logout)
+router.post("/logout", protectRoute, logout)
 
 router.post("/update/:type", protectRoute, updateProfile)
 router.delete("/delete/profile-pic", protectRoute, deleteProfilePic)

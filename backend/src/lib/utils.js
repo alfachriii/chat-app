@@ -112,8 +112,7 @@ export const updateContact = async (req, res) => {
     if (!data) return res.status(400).json({ message: "Contact required!" });
 
     // validasi jika sudah ada contact dalam list
-    console.log(data)
-    if (contacts.contactList.some(contact => contact.email === data.email)) {
+    if (contacts.contactList.some(contact => contact === data.userId)) {
       console.log("pix")
       return res.status(400).json({ message: "Contact already added." });
     } else {

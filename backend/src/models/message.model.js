@@ -42,6 +42,11 @@ const messageSchema = new mongoose.Schema(
   baseOptions
 );
 
+// Indeks penting untuk performa
+messageSchema.index({ senderId: 1, receiverId: 1, createdAt: -1 });
+messageSchema.index({ receiverId: 1, senderId: 1, createdAt: -1 });
+// messageSchema.index({ "file.sentAs": 1 }); // Mencari pesan berdasarkan tipe file
+
 const Message = mongoose.model("Message", messageSchema);
 
 export const PersonalMessage = Message.discriminator(

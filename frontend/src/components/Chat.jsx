@@ -11,7 +11,7 @@ import ReactPlayer from "react-player";
 const Chat = () => {
   const { selectedUser, messages, getMessages, sendMessage, isOnline, subscribeToChat, unsubscribeFromChat } = useChatStore();
   const { openModal, modals } = useModalStore();
-  const { authUser, socket, connectSocket } = useAuthStore();
+  const { authUser, socket } = useAuthStore();
   const contactInfoModel = modals.find(
     (modal) => modal.modalId === "contact-info"
   );

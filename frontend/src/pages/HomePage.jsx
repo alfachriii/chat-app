@@ -10,7 +10,7 @@ import { useAuthStore } from "../store/auth.store";
 
 const HomePage = () => {
   const { connectSocket, disconnectSocket } = useAuthStore()
-  const { selectedUser, setSelectedUser } = useChatStore();
+  const { selectedUser, setSelectedUser, getRecentMessages, recentMessages } = useChatStore();
   const { modals } = useModalStore();
   const contactModal = modals.find((modal) => modal.modalId === "contact");
 
@@ -53,14 +53,14 @@ const HomePage = () => {
   }, []);
 
   useEffect(() => {
-
-    // Tambahkan event listener
     connectSocket()
 
-    // Bersihkan event listener saat komponen unmount
-    return
-  }, [connectSocket]);
+    getRecentMessages()
 
+    return
+  }, [connectSocket, getRecentMessages]);
+  
+  console.log(recentMessages)
 
   return (
     <>

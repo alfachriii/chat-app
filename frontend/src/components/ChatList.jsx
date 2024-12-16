@@ -11,7 +11,7 @@ import ChatListSkeleton from "./skeletons/ChatListSkeleton";
 const ChatList = () => {
   const { logout } = useAuthStore();
   const { setSelectedUser } = useChatStore();
-  const { getContacts, contacts, isContactsLoading } = useChatStore();
+  const { getContacts, currentChats, isContactsLoading } = useChatStore();
   const { openModal, modals } = useModalStore();
   const settingsModal = modals.find((modal) => modal.modalId === "settings");
 
@@ -19,7 +19,8 @@ const ChatList = () => {
     getContacts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
+  
+  console.log(currentChats)
   const [showOptions, setShowOptions] = useState(false);
 
   const handleLogout = (e) => {
@@ -71,7 +72,7 @@ const ChatList = () => {
             {isContactsLoading ? (
               <ChatListSkeleton />
             ) : (
-              contacts.map((user) => (
+              currentChats.map((user) => (
                 <div
                   key={user._id}
                   className="w-full h-16 py-10 p-2 flex items-center border-b cursor-pointer hover:bg-white"

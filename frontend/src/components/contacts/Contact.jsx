@@ -21,7 +21,7 @@ const Contact = ({ modal }) => {
 
   const handleStartChat = async (user) => {
     setSelectedUser(user);
-    await updateContact(user.email);
+    await updateContact(user._id);
     closeModal("contact");
   };
 

@@ -1,6 +1,13 @@
 import bcrypt from "bcryptjs";
 import User from "../models/user.model.js";
-import { generateToken, getCloudinaryUrlId, updateAbout, updateContact, updateName, updateProfilePic } from "../lib/utils.js";
+import {
+  generateToken,
+  getCloudinaryUrlId,
+  updateAbout,
+  updateContact,
+  updateName,
+  updateProfilePic,
+} from "../lib/utils.js";
 import Contact from "../models/contact.model.js";
 import cloudinary from "../lib/cloudinary.js";
 
@@ -19,31 +26,35 @@ export const signup = async (req, res) => {
     const salt = await bcrypt.genSalt(11);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newContact = new Contact({
+    const newUser = new User({
+      name,
       email,
+      password: hashedPassword,
     });
 
-    if (newContact) {
-      const newUser = new User({
-        name,
-        email,
-        password: hashedPassword,
-        contactId: newContact._id,
+    // Simpan user terlebih dahulu
+    if (newUser) {
+      await newUser.save();
+
+      const newContact = new Contact({
+        user: newUser._id,
+        contactList: ["675d2abaed702ec4fec29833"]
       });
+      await newContact.save();
 
-      if (newUser) {
-        generateToken(newUser._id, newContact._id, res);
-        await newUser.save();
-        await newContact.save();
+      // Update user dengan contactId langsung setelah contact dibuat
+      newUser.contactId = newContact._id;
+      await newUser.save();
 
-        res.status(201).json({
-          _id: newUser._id,
-          name: newUser.name,
-          email: newUser.email,
-          contactId: newUser.contactId,
-          profilePic: newUser.profilePic,
-        });
-      }
+      generateToken(newUser._id, newUser.contactId, res);
+
+      res.status(201).json({
+        _id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        contactId: newUser.contactId,
+        profilePic: newUser.profilePic,
+      });
     } else {
       res.status(400).json({ message: "Invalid user data" });
     }
@@ -78,7 +89,8 @@ export const login = async (req, res) => {
   }
 };
 
-export const logout = (req, res) => {
+export const logout = async (req, res) => {
+  const { userId } = req.user._id;
   try {
     res.cookie("jwt", "", { maxAge: 0 });
     res.status(200).json({ message: "Logged out successfully" });
@@ -99,16 +111,12 @@ export const checkAuth = (req, res) => {
 
 export const checkStatusUser = (req, res) => {
   try {
-    const { id: userId } = req.params
-    
-    
-  } catch (error) {
-    
-  }
-}
+    const { id: userId } = req.params;
+  } catch (error) {}
+};
 
 export const updateProfile = (req, res) => {
-  const { type: typeOfUpdate } = req.params
+  const { type: typeOfUpdate } = req.params;
   switch (typeOfUpdate) {
     case "profile-pic":
       return updateProfilePic(req, res);
@@ -125,22 +133,22 @@ export const updateProfile = (req, res) => {
     default:
       return res.status(400).json({ error: "Invalid update type" });
   }
-}
+};
 
 export const deleteProfilePic = async (req, res) => {
-  const profilePicUrl = req.user.profilePic
-  const userId = req.user._id
-  const imageId = getCloudinaryUrlId(profilePicUrl) 
+  const profilePicUrl = req.user.profilePic;
+  const userId = req.user._id;
+  const imageId = getCloudinaryUrlId(profilePicUrl);
   try {
-    await cloudinary.api.delete_resources(imageId, { type: "upload", resource_type: "image" })
-    const updateUser = await User.findByIdAndUpdate(
-      userId,
-      { profilePic: "" } 
-    )
+    await cloudinary.api.delete_resources(imageId, {
+      type: "upload",
+      resource_type: "image",
+    });
+    const updateUser = await User.findByIdAndUpdate(userId, { profilePic: "" });
 
-    res.status(200).json(updateUser)
-  } catch (error) { 
-    res.status(500).json({ message: "Internal server error"})
-    console.log("Error on deleteProfilePic controller: ", error)
+    res.status(200).json(updateUser);
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+    console.log("Error on deleteProfilePic controller: ", error);
   }
-}
+};

@@ -9,6 +9,7 @@ import { IoCamera } from "react-icons/io5";
 import { useAuthStore } from "../../store/auth.store";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { useRef } from "react";
 
 // eslint-disable-next-line react/prop-types
 const Profile = ({ isOpen, onClose }) => {
@@ -23,6 +24,8 @@ const Profile = ({ isOpen, onClose }) => {
     isUpdateProfile,
   } = useAuthStore();
   const [selectedImg, setSelectedImg] = useState(null);
+
+  const fileInputRef = useRef(null);
 
   const handleShowProfilePic = () => {
     if (!authUser.profilePic)
@@ -101,30 +104,33 @@ const Profile = ({ isOpen, onClose }) => {
               <button
                 className="absolute bottom-0 right-0 p-2 rounded-full bg-sky-50 cursor-pointer"
                 onClick={() => setShowPhotoOptions(!showPhotoOptions)}
+                
               >
                 <IoCamera className="text-3xl text-sky-600" />
               </button>
               {showPhotoOptions ? (
-                <div className="absolute -right-36 top-1 space-y-2 py-3 bg-sky-50 shadow-md shadow-slate-400">
+                <div className="absolute -right-36 bottom-0 space-y-2 py-3 bg-sky-50 shadow-md shadow-slate-400">
                   <button
                     className="flex gap-2 px-2"
                     onClick={handleShowProfilePic}
+                    // onClick={() => fileInputRef.current.click()}
                   >
                     <GrView className="text-xl" />
                     <p>View photo</p>
                   </button>
-                  <label className="flex gap-2 px-2 cursor-pointer">
-                    <FaRegFolderOpen className="text-xl" />
+                  <div className="flex gap-2 px-2 cursor-pointer" onClick={() => fileInputRef.current.click()}>
+                    <FaRegFolderOpen className="text-xl"/>
                     <input
                       type="file"
+                      ref={fileInputRef}
                       id="avatar-upload"
                       className="hidden"
                       accept="image/*"
                       onChange={handleImageUpload}
                       disabled={isUpdateProfile}
                     />
-                    <p>Upload photo</p>
-                  </label>
+                    <button>Upload photo</button>
+                  </div>
                   <button
                     className="flex gap-2 px-2 pt-2 border-t border-slate-400"
                     onClick={handleDeleteProfilePic}
@@ -150,7 +156,7 @@ const Profile = ({ isOpen, onClose }) => {
               <input
                 type="text"
                 placeholder={authUser.name}
-                value={formName}
+                value={formName || authUser.name}
                 onChange={(e) => setFormName(e.target.value)}
                 className="w-11/12 placeholder:text-slate-700 bg-transparent outline-none"
               />
@@ -174,7 +180,7 @@ const Profile = ({ isOpen, onClose }) => {
               <input
                 type="text"
                 placeholder={authUser.about}
-                value={formAbout}
+                value={formAbout || authUser.about}
                 onChange={(e) => setFormAbout(e.target.value) }
                 className="w-11/12 placeholder:text-slate-700 bg-transparent outline-none"
               />
