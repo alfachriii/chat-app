@@ -1,30 +1,156 @@
 export function formatMessageTime(date) {
-  return new Date(date).toLocaleTimeString("en-US", {
+  const options = {
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false,
+    hour12: true,
+  };
+  return new Date(date).toLocaleTimeString("en-US", options);
+}
+
+export function truncateText(text, maxLength) {
+  console.log(text.length)
+  if (text.length > maxLength) {
+    return text.substring(0, maxLength) + "...";
+  }
+  return text;
+}
+
+export const combineDataUser = (users, messages) => {
+  // Buat hash map dari messages berdasarkan senderId
+  const messageMap = messages.reduce((acc, msg) => {
+    acc[msg._id] = msg.lastMessage; // Asumsi pesan terakhir adalah pesan terbaru
+    return acc;
+  }, {});
+
+  console.log(messageMap)
+
+  // Gabungkan data users dengan pesan terakhir
+  return users.map((user) => ({
+    ...user,
+    lastMessage: messageMap[user._id] || null, // Jika tidak ada pesan, nilai default null
+  }));
+};
+
+// storage
+const DB_NAME = "seeChatDB";
+const DB_VERSION = 1;
+const STORE_NAME = "chats";
+
+let db;
+
+export function initDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      const store = db.createObjectStore(STORE_NAME, { keyPath: "_id" });
+
+      // store.createIndex('_id', '_id', { unique: true });
+      // store.createIndex('receiverId', 'receiverId', { unique: false });
+      store.createIndex("createdAt", "createdAt", { unique: false }); // Menambahkan index untuk timestamp
+      store.createIndex("updatedAt", "updatedAt", { unique: false }); // Menambahkan index untuk timestamp
+    };
+
+    request.onsuccess = (event) => {
+      db = event.target.result;
+      console.log("Database berhasil dibuka!");
+      resolve(db);
+    };
+
+    request.onerror = (event) => {
+      console.error("Database error:", event.target.error);
+      reject(event.target.error);
+    };
   });
 }
 
-// storage
-const request = indexedDB.open('seechatDB', 1);
+export function saveBulkDataWithCursorCheck(dataArray) {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
 
-request.onupgradeneeded = function (event) {
-  const db = event.target.result;
+    console.log("Memulai batch insert dengan cursor check...");
 
-  if (!db.objectStoreNames.contains('chats')) {
-    const objectStore = db.createObjectStore('chats', { keyPath: 'id', autoIncrement: true });
+    // Fungsi untuk insert data jika id belum ada
+    const insertIfNotExists = (data) => {
+      return new Promise((resolve, reject) => {
+        const request = store.openCursor();
 
-    // Indeks tambahan untuk pencarian lainnya
-    objectStore.createIndex('chatId', 'chatId', { unique: true });
-    objectStore.createIndex('senderId', 'senderId', { unique: true });
-    objectStore.createIndex('receiverId', 'receiverId', { unique: true });
-    objectStore.createIndex('timestamp', 'timestamp', { unique: true });
-  }
-};
+        let exists = false;
 
-request.onerror = function (event) {
-  console.error('Database error:', event.target.error);
+        request.onsuccess = (event) => {
+          const cursor = event.target.result;
+          if (cursor) {
+            if (cursor.value.id === data.id) {
+              exists = true; // Data sudah ada
+            }
+            cursor.continue();
+          } else {
+            // Jika cursor selesai dan data belum ditemukan, lakukan insert
+            if (!exists) {
+              store.put(data);
+            }
+            resolve(); // Selesaikan promise
+          }
+        };
+
+        request.onerror = (event) => {
+          console.error("Cursor error:", event.target.error);
+          reject(event.target.error);
+        };
+      });
+    };
+
+    // Iterasi dataArray menggunakan for loop
+    const promises = [];
+    for (let i = 0; i < dataArray.length; i++) {
+      promises.push(insertIfNotExists(dataArray[i]));
+    }
+
+    // Tunggu semua data selesai diproses
+    Promise.all(promises)
+      .then(() => {
+        console.log("Batch insert dengan cursor check selesai.");
+        resolve();
+      })
+      .catch((error) => {
+        console.error("Error saat batch insert dengan cursor check:", error);
+        reject(error);
+      });
+  });
+}
+
+export const fetchUserList = async () => {
+  // Ambil data dari IndexedDB
+  const request = indexedDB.open(DB_NAME, DB_VERSION); // Sesuaikan nama dan versi database
+  request.onsuccess = () => {
+    const db = request.result;
+    const transaction = db.transaction(STORE_NAME, "readonly"); // Sesuaikan dengan nama objectStore
+    const store = transaction.objectStore(STORE_NAME);
+    const getAllRequest = store.getAll(); // Ambil semua data
+
+    getAllRequest.onsuccess = () => {
+      const data = getAllRequest.result;
+      console.log(getAllRequest.result);
+
+      // Urutkan data berdasarkan 'updatedAt' atau 'createdAt' dari yang terbaru
+      const sortedData = data.sort((a, b) => {
+        const dateA = new Date(a.updatedAt);
+        const dateB = new Date(b.updatedAt);
+
+        // Cek apakah dateA dan dateB valid
+        if (isNaN(dateA) || isNaN(dateB)) {
+          console.error("Invalid date:", a.updatedAt, b.updatedAt);
+          return 0; // Jika ada tanggal tidak valid, jangan ubah urutan
+        }
+
+        return dateB - dateA; // Urutkan dari yang terbaru
+      });
+
+      return sortedData;
+    };
+  };
 };
 
 export const saveMessage = (message) => {
@@ -49,7 +175,7 @@ export const saveMessage = (message) => {
   request.onerror = function (event) {
     console.error("Database error:", event.target.error);
   };
-}
+};
 
 export const updateChat = (chatId, newChatData) => {
   const request = indexedDB.open("seechatDB", 1);
@@ -84,4 +210,4 @@ export const updateChat = (chatId, newChatData) => {
   request.onerror = function (event) {
     console.error("Database error:", event.target.error);
   };
-}
+};

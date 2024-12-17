@@ -116,7 +116,7 @@ export const updateContact = async (req, res) => {
       console.log("pix")
       return res.status(400).json({ message: "Contact already added." });
     } else {
-      contacts.contactList.push(data);
+      contacts.contactList.push(data.userId);
 
       await contacts.save();
     }

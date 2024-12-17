@@ -30,36 +30,6 @@ const Chat = () => {
     socket?.emit("checkStatus", selectedUser._id)
   }, [selectedUser._id, socket])
 
-  // useEffect(() => {
-  //   const handleFocus = () => {
-  //     if (!socket || socket.connected) return;
-  //     connectSocket();
-  //   };
-
-  //   // Mendiskonekkan socket saat halaman kehilangan fokus
-  //   const handleBlur = () => {
-  //     if (socket && socket.connected) {
-  //       socket.disconnect();
-  //     }
-  //   };
-
-  //   // Menangani event focus dan blur
-  //   window.addEventListener("focus", handleFocus);
-  //   window.addEventListener("blur", handleBlur);
-
-  //   // Menghubungkan socket saat komponen dimuat
-  //   connectSocket();
-
-  //   // Membersihkan event listener saat komponen dibersihkan
-  //   return () => {
-  //     window.removeEventListener("focus", handleFocus);
-  //     window.removeEventListener("blur", handleBlur);
-  //     if (socket) {
-  //       socket.disconnect();
-  //     }
-  //   };
-  // }, [connectSocket, socket])
-
   useEffect(() => {
     if (messageEndRef.current && messages) {
       messageEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -103,6 +73,7 @@ const Chat = () => {
   };
 
   console.log(isOnline)
+  const reversedMessages = [...messages].slice().reverse();
   if (!selectedUser) return null;
 
   return (

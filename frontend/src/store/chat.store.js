@@ -2,12 +2,21 @@ import { create } from "zustand";
 import { api } from "../lib/axios";
 import toast from "react-hot-toast";
 import { useAuthStore } from "./auth.store";
-import { saveMessage, updateChat } from "../lib/utils";
+import {
+  combineDataUser,
+  fetchUserList,
+  initDB,
+  saveBulkDataWithCursorCheck,
+  saveMessage,
+  updateChat,
+} from "../lib/utils";
 
 export const useChatStore = create((set, get) => ({
   messages: [],
   recentMessages: [],
   currentChats: [],
+  chatList: [],
+  combine: [],
   allContacts: [],
   selectedUser: null,
   isContactsLoading: false,
@@ -15,25 +24,24 @@ export const useChatStore = create((set, get) => ({
   isSendMessage: false,
   isOnline: false,
 
-  getContacts: async () => {
-    set({ isContactsLoading: true });
-    try {
-      const res = await api.get("/messages/contacts");
-      set({ currentChats: res.data });
+  // getContacts: async () => {
+  //   set({ isContactsLoading: true });
+  //   try {
+  //     const res = await api.get("/messages/contacts");
+  //     set({ currentChats: res.data });
 
+  //     const authUser = useAuthStore.getState().authUser
+  //     // res.data.map((chat) => saveMessage({
+  //     //   chatId: `${authUser._id}_${chat._id}`
 
-      const authUser = useAuthStore.getState().authUser
-      // res.data.map((chat) => saveMessage({
-      //   chatId: `${authUser._id}_${chat._id}`
+  //     // }))
 
-      // }))
-
-    } catch (error) {
-      toast.error(error.response.data.message);
-    } finally {
-      set({ isContactsLoading: false });
-    }
-  },
+  //   } catch (error) {
+  //     toast.error(error.response.data.message);
+  //   } finally {
+  //     set({ isContactsLoading: false });
+  //   }
+  // },
 
   getAllContacts: async () => {
     set({ isContactsLoading: true });
@@ -52,6 +60,7 @@ export const useChatStore = create((set, get) => ({
     set({ isGetMessages: true });
     try {
       const res = await api.get(`/messages/get/${receiverId}`);
+      console.log(res.data);
       set({ messages: res.data });
     } catch (error) {
       console.log(error);
@@ -86,21 +95,63 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
-  getRecentMessages: async () => {
+  // getRecentMessages: async () => {
+  //   try {
+  //     const res = await api.get("/messages/recent");
+  //     set({ recentMessages: res.data });
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // },
+
+  getChatListAndSaveToIndexedDb: async () => {
     try {
-      const res = await api.get("/messages/recent");
-      set({ recentMessages: res.data });
+      const users = await api.get("/messages/get-chat-list");
+      const messages = await api.get("/messages/recent");
+      console.log(messages.data)
 
-      const currentChats = get().currentChats
-      const authUser = useAuthStore.getState().authUser
-      // const chatIds = currentChats.map((chat) => chat._id)
+      const userDatas = combineDataUser(users.data, messages.data);
 
-      currentChats.map((chat) => updateChat(`${authUser._id}_${chat.receiverId}`, chat))
-      // get().changeMessagesStatus()
+      // add createdAt
+      const processedData = [];
+      for (let i = 0; i < userDatas.length; i++) {
+        const item = userDatas[i];
+        if (item.lastMessage?.createdAt) {
+          item.createdAt = item.lastMessage.createdAt;
+          item.updatedAt = item.lastMessage.updatedAt;
+        }
+        processedData.push(item);
+      }
+
+      // save to indexedDb
+      // initDB()
+      //   .then(() => saveBulkDataWithCursorCheck(processedData))
+      //   .then(() => {
+      //     console.log("Proses penyimpanan data selesai tanpa duplikasi.");
+      //   })
+      //   .catch((error) => {
+      //     console.error("Terjadi kesalahan:", error);
+      //   });
+
+      console.log(userDatas)
+        set({ chatList: userDatas})
+      // const chatListFromIndexedDb = await fetchUserList();
+      // console.log(chatListFromIndexedDb);
     } catch (error) {
       console.log(error);
+      toast.error("Error while get chat list");
     }
   },
+
+  // getChatListFromIndexedDb: async () => {
+  //   try {
+  //     const results = await fetchUserList()
+  //     console.log(results)
+  //   } catch (error) {
+  //     console.log(error)
+  //     toast.error("Error while getting chat list")
+  //   }
+  // },
 
   changeMessagesStatus: () => {
     const recentMessages = get().recentMessages;

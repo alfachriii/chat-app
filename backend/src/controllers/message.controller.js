@@ -7,12 +7,39 @@ import User from "../models/user.model.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
 import mongoose from "mongoose";
 
-export const getUsersInContact = async (req, res) => {
+export const getChatList = async (req, res) => {
   try {
-    const contactId = req.user.contactId;
-    const contact = await Contact.findById(contactId);
+    const targetUserId = req.user._id;
+    const userIds = await PersonalMessage.aggregate([
+      {
+        $match: {
+          $or: [{ receiverId: targetUserId }, { senderId: targetUserId }],
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          userId: {
+            $cond: {
+              if: { $eq: ["$senderId", targetUserId] },
+              then: "$receiverId",
+              else: "$senderId",
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          ids: { $addToSet: "$userId" },
+        },
+      },
+    ]);
 
-    const contacts = await User.find({ _id: { $in: contact.contactList }}).select("-password")
+    const contacts = await User.find({
+      _id: { $in: userIds[0].ids },
+    }).select(["-password", "-contactId"]);
+
     res.status(200).json(contacts);
   } catch (error) {
     console.error("Error in getUserInContact: ", error.message);
@@ -114,20 +141,20 @@ export const sendMessage = async (req, res) => {
   }
 };
 
-export const getRecentMessages = async (req, res) => {
-  const myUserId = req.user._id;
-  try {
-    const messages = await Message.find({
-      receiverId: myUserId,
-      status: "sent",
-    });
+// export const getRecentMessages = async (req, res) => {
+//   const myUserId = req.user._id;
+//   try {
+//     const messages = await Message.find({
+//       receiverId: myUserId,
+//       status: "sent",
+//     });
 
-    res.status(200).json(messages);
-  } catch (error) {
-    console.log("Error on get recent message controller: ", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
+//     res.status(200).json(messages);
+//   } catch (error) {
+//     console.log("Error on get recent message controller: ", error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 
 // async function ambilPesanUntukBanyakUser(userId, otherUserIds) {
 //   try {
@@ -160,6 +187,9 @@ async function ambilPesanUntukBanyakUserDenganAgregasi(userId, otherUserIds) {
               senderId: { $in: objectOtherUserIds },
               receiverId: new mongoose.Types.ObjectId(userId),
             },
+            {
+              receiverId: new mongoose.Types.ObjectId(userId),
+            },
           ],
         },
       },
@@ -183,7 +213,7 @@ async function ambilPesanUntukBanyakUserDenganAgregasi(userId, otherUserIds) {
           unreadCount: {
             $sum: {
               $cond: {
-                if: { $eq: ["$status", "delivered"] },
+                if: { $eq: ["$status", "sent"] },
                 then: {
                   $cond: {
                     if: {
@@ -219,56 +249,61 @@ async function ambilPesanUntukBanyakUserDenganAgregasi(userId, otherUserIds) {
   }
 }
 
-async function ambilPesanUntukBanyakUser(userId, otherUserIds) {
+const getMessagesForUser = async (userId) => {
   try {
-    const promises = otherUserIds.map(async (otherUserId) => {
-      return ambilPesanUntukBanyakUserDenganAgregasi(userId, otherUserId);
-    });
+    const results = await PersonalMessage.aggregate([
+      {
+        $match: {
+          $or: [
+            {receiverId: userId},
+            {senderId: userId}
+          ]
+          
+        },
+      },
+      {
+        $sort: {
+          timestamp: -1,
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $cond: {
+              if: { $eq: ["$receiverId", userId] },
+              then: "$senderId",
+              else: "$receiverId"
+            }
+          },
+          lastMessage: { $first: "$$ROOT" }
+        },
+      },
+      {
+        $addFields: {
+          "lastMessage.unreadCount": {
+            $sum: {
+              $cond: [{ $ne: ["$lastMessage.senderId", userId] }, 1, 0],
+            },
+          },
+        },
+      },
+    ]);
 
-    const results = await Promise.all(promises);
     return results;
   } catch (error) {
-    console.error("Gagal mengambil pesan untuk banyak user:", error);
-    throw error;
+    console.log("Error while get messages for user", error);
   }
-}
+};
 
-function gabungkanDataKontakDenganPesan(kontak, pesan) {
-  return kontak.map((kontakItem) => {
-    const pesanItem = pesan.find(
-      (p) => p.otherUserId.toString() === kontakItem._id.toString()
-    ); // Mencari pesan yang sesuai
-
-    return {
-      ...kontakItem, // Menyalin properti kontak
-      lastMessage: pesanItem ? pesanItem.lastMessage : null, // Menambahkan lastMessage atau null jika tidak ada
-      unreadCount: pesanItem ? pesanItem.unreadCount : 0, // Menambahkan unreadCount atau 0 jika tidak ada
-    };
-  });
-}
-
-export const getChatList = async (req, res) => {
+export const getRecentMessages = async (req, res) => {
   const userId = req.user._id;
-  const contactId = req.user.contactId;
-
   try {
-    const contact = await Contact.findById(contactId);
-    let userIds = [];
-    contact.contactList.forEach((element) => {
-      userIds.push(element.email);
-    });
 
-    const contacts = await findUsersByEmails(userIds);
-    let otherUserIds = contacts.map((contact) => contact._id);
-
-    const results = await ambilPesanUntukBanyakUserDenganAgregasi(
-      userId,
-      otherUserIds
-    );
+    const results = await getMessagesForUser(userId)
     res.status(200).json(results);
-    console.log(results);
   } catch (error) {
     console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 
   // res.status(200).json(chatList

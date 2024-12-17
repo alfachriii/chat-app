@@ -10,7 +10,7 @@ import { useAuthStore } from "../store/auth.store";
 
 const HomePage = () => {
   const { connectSocket, disconnectSocket } = useAuthStore()
-  const { selectedUser, setSelectedUser, getRecentMessages, recentMessages } = useChatStore();
+  const { selectedUser, setSelectedUser, getChatListAndSaveToIndexedDb, chatList, combineDataUsers, combine } = useChatStore();
   const { modals } = useModalStore();
   const contactModal = modals.find((modal) => modal.modalId === "contact");
 
@@ -55,12 +55,12 @@ const HomePage = () => {
   useEffect(() => {
     connectSocket()
 
-    getRecentMessages()
+    getChatListAndSaveToIndexedDb()
 
     return
-  }, [connectSocket, getRecentMessages]);
+  }, [connectSocket, getChatListAndSaveToIndexedDb]);
   
-  console.log(recentMessages)
+  // console.log(recentMessages)
 
   return (
     <>
