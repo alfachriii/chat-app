@@ -9,7 +9,7 @@ import { formatMessageTime } from "../lib/utils";
 import ReactPlayer from "react-player";
 
 const Chat = () => {
-  const { selectedUser, messages, getMessages, sendMessage, isOnline, subscribeToChat, unsubscribeFromChat } = useChatStore();
+  const { selectedUser, messages, getMessages, isGetMessages, sendMessage, isOnline, subscribeToChat, unsubscribeFromChat } = useChatStore();
   const { openModal, modals } = useModalStore();
   const { authUser, socket } = useAuthStore();
   const contactInfoModel = modals.find(
@@ -104,6 +104,7 @@ const Chat = () => {
                 Start new message.
               </p>
             ) : null}
+            {isGetMessages && <h5>Loading..</h5>}
             {messages.map((message) => (
               <div
                 key={message._id}

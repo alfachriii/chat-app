@@ -1,17 +1,18 @@
+import { LuMessageSquarePlus } from "react-icons/lu";
 import { HiDotsVertical } from "react-icons/hi";
 import { FaImage, FaSearch } from "react-icons/fa";
-import { useState } from "react";
+import { BsCheck2, BsCheck2All } from "react-icons/bs";
+import ChatListSkeleton from "./skeletons/ChatListSkeleton";
 import Settings from "./settings/Settings";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "../store/auth.store";
-import { LuMessageSquarePlus } from "react-icons/lu";
 import { useChatStore } from "../store/chat.store";
 import { useModalStore } from "../store/modal.store";
-import ChatListSkeleton from "./skeletons/ChatListSkeleton";
 import { formatMessageTime, truncateText } from "../lib/utils";
 
 const ChatList = () => {
   const { logout } = useAuthStore();
-  const { setSelectedUser } = useChatStore();
+  const { setSelectedUser, newMessagesListener } = useChatStore();
   const { chatList, isContactsLoading } = useChatStore();
   const { openModal, modals } = useModalStore();
   const settingsModal = modals.find((modal) => modal.modalId === "settings");
@@ -25,13 +26,17 @@ const ChatList = () => {
 
   const handleLogout = (e) => {
     e.preventDefault();
+    console.log("click")
     logout();
   };
 
-  // useEffect(() => {
-  //   getChatListFromIndexedDb()
-  // }, [getChatListFromIndexedDb])
+  useEffect(() => {
+    newMessagesListener()
 
+    return () => newMessagesListener()
+  }, [newMessagesListener])
+
+  console.log(chatList)
   return (
     <>
       {settingsModal ? (
@@ -92,31 +97,43 @@ const ChatList = () => {
                       <h4 className="text-base font-semibold">{user.name}</h4>
                       <h5
                         className={`text-xs font-semibold ${
-                          user.lastMessage.unreadCount > 0 && "text-sky-500"
+                          user.message.unreadCount > 0 && "text-sky-500"
                         }`}
                       >
-                        {user.lastMessage &&
-                          formatMessageTime(user.lastMessage.createdAt)}
+                        {user.message.latestMessage &&
+                          formatMessageTime(user.message.latestMessage.createdAt)}
                       </h5>
                     </div>
                     <div className="flex justify-between">
-                      <div className="flex gap-2 items-center min-h-4">
-                        {user.lastMessage ? (
-                          user.lastMessage.image ? (
+                      <div className="flex gap-1 items-center min-h-4">
+                        {user.message.latestMessage ? (
+                          user.message.latestMessage.image ? (
                             <>
                               <FaImage className="text-xs" />
                               <h5 className="text-xs">Image</h5>
                             </>
                           ) : (
-                            // <h5 className="text-xs">{user.lastMessage.text}</h5>
-                            <h5 className="text-xs">{truncateText(user.lastMessage.text, 40)}</h5>
+                            <>
+                              {user.message.unreadCount === 0 ? (
+                                user.message.latestMessage.status === "sent" ? (
+                                  <BsCheck2 />
+                                ) : user.message.latestMessage.status === "delivered" ? (
+                                  <BsCheck2All />
+                                ) : (
+                                  <BsCheck2All className="text-sky-400"/>
+                                )
+                              ) : null}
+                              <h5 className="text-xs">
+                                {truncateText(user.message.latestMessage.text, 40)}
+                              </h5>
+                            </>
                           )
                         ) : null}
                       </div>
-                      {user.lastMessage && user.lastMessage.unreadCount > 0 ? (
+                      {user.message.latestMessage && user.message.unreadCount > 0 ? (
                         <div className="size-5 bg-sky-300 rounded-full flex justify-center items-center">
                           <h5 className="text-xs font-semibold text-slate-100">
-                            {user.lastMessage.unreadCount}
+                            {user.message.unreadCount}
                           </h5>
                         </div>
                       ) : null}

@@ -36,9 +36,17 @@ export const getChatList = async (req, res) => {
       },
     ]);
 
-    const contacts = await User.find({
-      _id: { $in: userIds[0].ids },
-    }).select(["-password", "-contactId"]);
+    let contacts = [];
+    if (userIds[0]) {
+      contacts = await User.find({
+        _id: { $in: userIds[0].ids },
+      }).select(["-password", "-contactId"]);
+    } else {
+      const results = await User.findOne({
+        email: "alfachri@email.com",
+      }).select(["-password", "-contactId"]);
+      contacts.push(results);
+    }
 
     res.status(200).json(contacts);
   } catch (error) {
@@ -70,7 +78,7 @@ export const getPersonalMessages = async (req, res) => {
         { senderId: myId, receiverId: userToChatId },
         { senderId: userToChatId, receiverId: myId },
       ],
-    });
+    }).sort({ createdAt: 1 });
 
     res.status(200).json(messages);
   } catch (error) {
@@ -141,124 +149,13 @@ export const sendMessage = async (req, res) => {
   }
 };
 
-// export const getRecentMessages = async (req, res) => {
-//   const myUserId = req.user._id;
-//   try {
-//     const messages = await Message.find({
-//       receiverId: myUserId,
-//       status: "sent",
-//     });
-
-//     res.status(200).json(messages);
-//   } catch (error) {
-//     console.log("Error on get recent message controller: ", error);
-//     res.status(500).json({ message: "Internal server error" });
-//   }
-// };
-
-// async function ambilPesanUntukBanyakUser(userId, otherUserIds) {
-//   try {
-//       const promises = otherUserIds.map(async (otherUserId) => {
-//           return ambilPesanTerbaruDanHitungUnreadDenganAgregasi(userId, otherUserId);
-//       });
-
-//       const results = await Promise.all(promises);
-//       return results;
-//   } catch (error) {
-//       console.error("Gagal mengambil pesan untuk banyak user:", error);
-//       throw error;
-//   }
-// }
-
-async function ambilPesanUntukBanyakUserDenganAgregasi(userId, otherUserIds) {
-  try {
-    const objectOtherUserIds = otherUserIds.map(
-      (id) => new mongoose.Types.ObjectId(id)
-    );
-    const result = await PersonalMessage.aggregate([
-      {
-        $match: {
-          $or: [
-            {
-              senderId: new mongoose.Types.ObjectId(userId),
-              receiverId: { $in: objectOtherUserIds },
-            },
-            {
-              senderId: { $in: objectOtherUserIds },
-              receiverId: new mongoose.Types.ObjectId(userId),
-            },
-            {
-              receiverId: new mongoose.Types.ObjectId(userId),
-            },
-          ],
-        },
-      },
-      {
-        $sort: {
-          createdAt: -1,
-        },
-      },
-      {
-        $group: {
-          _id: {
-            otherUserId: {
-              $cond: {
-                if: { $eq: ["$senderId", new mongoose.Types.ObjectId(userId)] },
-                then: "$receiverId",
-                else: "$senderId",
-              },
-            },
-          },
-          lastMessage: { $first: "$$ROOT" },
-          unreadCount: {
-            $sum: {
-              $cond: {
-                if: { $eq: ["$status", "sent"] },
-                then: {
-                  $cond: {
-                    if: {
-                      $ne: ["$senderId", new mongoose.Types.ObjectId(userId)],
-                    },
-                    then: 1,
-                    else: 0,
-                  },
-                },
-                else: 0,
-              },
-            },
-          },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          otherUserId: "$_id.otherUserId",
-          lastMessage: 1,
-          unreadCount: 1,
-        },
-      },
-    ]);
-
-    return result;
-  } catch (error) {
-    console.error(
-      "Gagal mengambil pesan untuk banyak user dengan agregasi:",
-      error
-    );
-    throw error;
-  }
-}
-
 const getMessagesForUser = async (userId) => {
+  console.log(userId.toString())
   try {
-    const results = await PersonalMessage.aggregate([
+    const results = await Message.aggregate([
       {
         $match: {
-          $or: [
-            {receiverId: userId},
-            {senderId: userId}
-          ]
-          
+          $or: [{ senderId: userId }, { receiverId: userId }],
         },
       },
       {
@@ -270,25 +167,55 @@ const getMessagesForUser = async (userId) => {
         $group: {
           _id: {
             $cond: {
-              if: { $eq: ["$receiverId", userId] },
-              then: "$senderId",
-              else: "$receiverId"
-            }
+              if: { $eq: ["$senderId", userId] },
+              then: "$receiverId",
+              else: "$senderId",
+            },
           },
-          lastMessage: { $first: "$$ROOT" }
+          messages: { $push: "$$ROOT" },
         },
       },
       {
         $addFields: {
-          "lastMessage.unreadCount": {
-            $sum: {
-              $cond: [{ $ne: ["$lastMessage.senderId", userId] }, 1, 0],
+          // Mengurutkan array messages berdasarkan timestamp
+          messages: {
+            $sortArray: { input: "$messages", sortBy: { createdAt: -1 } }, // Urutkan berdasarkan createdAt descending
+          },
+        },
+      },
+      {
+        $addFields: {
+          latestMessage: { $arrayElemAt: ["$messages", 0] }, // Ambil pesan terbaru
+        },
+      },
+      {
+        $addFields: {
+          unreadCount: {
+            $cond: {
+              if: { $ne: ["$latestMessage.senderId", userId] }, // Cek jika senderId dari pesan terbaru tidak sama dengan userId
+              then: {
+                $size: {
+                  $filter: {
+                    input: "$messages", // Array pesan
+                    as: "message",
+                    cond: { $ne: ["$$message.senderId", userId] }, // Filter pesan yang senderId bukan userId
+                  },
+                },
+              },
+              else: 0, // Tidak ada pesan yang belum dibaca
             },
           },
         },
       },
+      {
+        $project: {
+          latestMessage: 1, // Tampilkan pesan terbaru
+          unreadCount: 1, // Jumlah pesan belum dibaca
+        },
+      },
     ]);
 
+    console.log(JSON.stringify(results, null, 2));
     return results;
   } catch (error) {
     console.log("Error while get messages for user", error);
@@ -298,8 +225,7 @@ const getMessagesForUser = async (userId) => {
 export const getLastMessages = async (req, res) => {
   const userId = req.user._id;
   try {
-
-    const results = await getMessagesForUser(userId)
+    const results = await getMessagesForUser(userId);
     res.status(200).json(results);
   } catch (error) {
     console.error(error);
@@ -307,17 +233,34 @@ export const getLastMessages = async (req, res) => {
   }
 };
 
-export const getUndeliveredMessageIds = async (req, res) => {
-  const userId = req.user._id
+export const updateUndeliveredMessages = async (req, res) => {
+  const userId = req.user._id;
+  const BATCH_SIZE = 50;
   try {
-    const updatedMessages = await PersonalMessage.updateMany(
-      { receiverId: userId, status: "sent" }, // Filter langsung berdasarkan receiverId
-      { $set: { status: "terbaca" } } // Update status menjadi terbaca
-    );
-    
+    while (true) {
+      // Cari dokumen yang cocok, urutkan berdasarkan createdAt (paling lama)
+      const messages = await PersonalMessage.find({
+        receiverId: userId,
+        status: "sent",
+      })
+        .sort({ createdAt: 1 }) // Urutkan dari yang paling lama
+        .limit(BATCH_SIZE); // Ambil batch kecil
+
+      if (messages.length === 0) break; // Jika tidak ada dokumen lagi, keluar dari loop
+
+      // Dapatkan ID dokumen yang akan diupdate
+      const ids = messages.map((msg) => msg._id);
+
+      // Update dokumen dengan ID yang ditemukan
+      const result = await PersonalMessage.updateMany(
+        { _id: { $in: ids } },
+        { $set: { status: "delivered" } }
+      );
+    }
+
     // res.status(200).json(messageIds)
   } catch (error) {
-    console.log(error)
-    res.status(500).json({ message: "Internal server error" })
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
   }
-}
+};

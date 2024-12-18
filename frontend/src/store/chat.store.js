@@ -9,6 +9,7 @@ import {
   saveBulkDataWithCursorCheck,
   saveMessage,
   updateChat,
+  updateChatMessage,
 } from "../lib/utils";
 
 export const useChatStore = create((set, get) => ({
@@ -60,7 +61,6 @@ export const useChatStore = create((set, get) => ({
     set({ isGetMessages: true });
     try {
       const res = await api.get(`/messages/get/${receiverId}`);
-      console.log(res.data);
       set({ messages: res.data });
     } catch (error) {
       console.log(error);
@@ -73,7 +73,6 @@ export const useChatStore = create((set, get) => ({
   sendMessage: async (inputMessage, inputFile, receiverId) => {
     //isOnGroup
     set({ isSendMessage: true });
-    console.log(inputMessage);
     try {
       const data = {
         data: {
@@ -87,6 +86,15 @@ export const useChatStore = create((set, get) => ({
       const res = await api.post("/messages/send/personal", data);
       set({ messages: [...get().messages, res.data] });
       toast.success("success");
+
+      const chats = get().chatList;
+      const updatedChats = updateChatMessage(chats, receiverId, {
+        status: "sent",
+        msg: inputMessage,
+        time: new Date(),
+        from: "send"
+      });
+      set({ chatList: updatedChats });
     } catch (error) {
       console.log(error);
       toast.error("Error while sending message");
@@ -100,6 +108,8 @@ export const useChatStore = create((set, get) => ({
       const users = await api.get("/messages/get-chat-list");
       const messages = await api.get("/messages/last");
       const userDatas = combineDataUser(users.data, messages.data);
+
+      console.log(messages.data)
 
       // add createdAt
       const processedData = [];
@@ -122,7 +132,8 @@ export const useChatStore = create((set, get) => ({
       //     console.error("Terjadi kesalahan:", error);
       //   });
 
-        set({ chatList: userDatas})
+      set({ chatList: userDatas });
+      console.log(userDatas);
       // const chatListFromIndexedDb = await fetchUserList();
       // console.log(chatListFromIndexedDb);
     } catch (error) {
@@ -131,13 +142,12 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
-  changeMessagesStatus: async () => {
+  updateUndeliveredMessages: async () => {
     try {
-      // const res = await api.get("/messages/undelivered")
-
-
+      await api.put("/messages/undelivered");
     } catch (error) {
-      console.log("Error on change message status")
+      console.log("Error on update undelivered messages status", error);
+      toast.error("Error while update undelivered messages");
     }
   },
 
@@ -149,6 +159,7 @@ export const useChatStore = create((set, get) => ({
       ? set({ selectedUser: null })
       : set({ selectedUser: data });
   },
+  setChatList: (data) => set({ chatList: data }),
 
   subscribeToChat: () => {
     const { selectedUser } = get();
@@ -180,5 +191,24 @@ export const useChatStore = create((set, get) => ({
   unsubscribeFromChat: () => {
     const socket = useAuthStore.getState().socket;
     socket?.off("newMessage");
+  },
+
+  newMessagesListener: () => {
+    const socket = useAuthStore.getState().socket;
+
+    socket?.on("newMessage", (newMessage) => {
+      const chats = get().chatList;
+      if (newMessage) {
+        const updatedChats = updateChatMessage(chats, newMessage.senderId, {
+          status: newMessage.status,
+          msg: newMessage.text,
+          time: newMessage.createdAt,
+        });
+        console.log(updatedChats)
+        set({ chatList: updatedChats });
+      }
+
+      get().updateUndeliveredMessages()
+    });
   },
 }));

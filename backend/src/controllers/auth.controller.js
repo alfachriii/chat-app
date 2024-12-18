@@ -90,7 +90,7 @@ export const login = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-  const { userId } = req.user._id;
+  console.log("logout request")
   try {
     res.cookie("jwt", "", { maxAge: 0 });
     res.status(200).json({ message: "Logged out successfully" });

@@ -7,10 +7,18 @@ import Contact from "../components/contacts/Contact";
 import { useModalStore } from "../store/modal.store";
 import { useEffect } from "react";
 import { useAuthStore } from "../store/auth.store";
+import { updateChatMessage } from "../lib/utils";
 
 const HomePage = () => {
-  const { authUser, socket, connectSocket } = useAuthStore()
-  const { selectedUser, setSelectedUser, getChatListAndSaveToIndexedDb, chatList, combineDataUsers, combine } = useChatStore();
+  const { authUser, socket, connectSocket } = useAuthStore();
+  const {
+    selectedUser,
+    setSelectedUser,
+    getChatListAndSaveToIndexedDb,
+    updateUndeliveredMessages,
+    setChatList,
+    chatList
+  } = useChatStore();
   const { modals } = useModalStore();
   const contactModal = modals.find((modal) => modal.modalId === "contact");
 
@@ -18,28 +26,28 @@ const HomePage = () => {
     // Fungsi untuk menangani penekanan tombol "Esc"
     const handleEscKey = (event) => {
       if (event.key === "Escape") {
-        console.log("clck")
-        setSelectedUser(null)
+        console.log("clck");
+        setSelectedUser(null);
       }
     };
 
     // Menambahkan event listener untuk keydown
-    window.addEventListener('keydown', handleEscKey);
+    window.addEventListener("keydown", handleEscKey);
 
     // Membersihkan event listener ketika komponen di-unmount
     return () => {
-      window.removeEventListener('keydown', handleEscKey);
+      window.removeEventListener("keydown", handleEscKey);
     };
-  }, [setSelectedUser])
+  }, [setSelectedUser]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        console.log("Aktif")
-        socket.emit("online", authUser._id)
+        console.log("Aktif");
+        socket.emit("online", authUser._id);
         // Logika ketika tab aktif
       } else {
-        socket.emit("offline", authUser._id)
+        socket.emit("offline", authUser._id);
         // Logika ketika tab tidak aktif
       }
     };
@@ -53,17 +61,21 @@ const HomePage = () => {
   }, [authUser._id, socket]);
 
   useEffect(() => {
-    socket?.emit("online", authUser._id)
-  }, [authUser._id, socket])
+    socket?.emit("online", authUser._id);
+
+    updateUndeliveredMessages();
+
+    
+  }, [authUser._id, chatList, setChatList, socket, updateUndeliveredMessages]);
 
   useEffect(() => {
-    connectSocket()
+    connectSocket();
 
-    getChatListAndSaveToIndexedDb()
+    getChatListAndSaveToIndexedDb();
 
-    return
+    return;
   }, [connectSocket, getChatListAndSaveToIndexedDb]);
-  
+
   // console.log(recentMessages)
 
   return (
@@ -71,7 +83,7 @@ const HomePage = () => {
       <ProfilePic />
       <div className="w-screen h-screen flex bg-sky-50 text-slate-700">
         <div className="w-2/5 h-full">
-          {contactModal ? <Contact modal={contactModal}/> : <ChatList />}
+          {contactModal ? <Contact modal={contactModal} /> : <ChatList />}
         </div>
         <div className="w-3/5 h-screen bg-[#e4eef3] text-slate-700">
           {selectedUser ? <Chat /> : <Intro />}

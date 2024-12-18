@@ -16,16 +16,48 @@ export function truncateText(text, maxLength) {
 
 export const combineDataUser = (users, messages) => {
   // Buat hash map dari messages berdasarkan senderId
+  console.log(messages);
+  console.log(users);
   const messageMap = messages.reduce((acc, msg) => {
-    acc[msg._id] = msg.lastMessage; // Asumsi pesan terakhir adalah pesan terbaru
+    acc[msg._id] = msg; // Asumsi pesan terakhir adalah pesan terbaru
     return acc;
   }, {});
 
   // Gabungkan data users dengan pesan terakhir
   return users.map((user) => ({
     ...user,
-    lastMessage: messageMap[user._id] || null, // Jika tidak ada pesan, nilai default null
+    message: messageMap[user._id] || null, // Jika tidak ada pesan, nilai default null
   }));
+};
+
+export const updateChatMessage = (chats, targetChatId, data) => {
+  const chatIndex = chats.findIndex((chat) => chat._id === targetChatId);
+  console.log(targetChatId);
+
+  if (chatIndex !== -1) {
+    const updatedChats = [...chats];
+    const currentChat = updatedChats[chatIndex];
+    const currentUnreadCount = currentChat?.message?.unreadCount || 0;
+
+    updatedChats[chatIndex] = {
+      ...currentChat,
+      message: {
+        ...currentChat.message,
+        latestMessage: {
+          ...currentChat.message?.latestMessage,
+          status: data.status,
+          ...data?.msg && {
+            text: data.msg,
+            createdAt: data.time,
+          },
+        },
+        unreadCount: data?.msg ? !data.from ? currentUnreadCount + 1 : 0 : currentUnreadCount, // Menambahkan unreadCount jika ada msg baru
+      },
+    };
+    return updatedChats;
+  }
+
+  return chats; // Return as is if targetChatId not found
 };
 
 // storage
