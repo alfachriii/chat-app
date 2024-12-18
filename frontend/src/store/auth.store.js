@@ -158,6 +158,7 @@ export const useAuthStore = create((set, get) => ({
 
     socket.on("connect", () => {
       console.log("Connected to server:", socket.id);
+
     });
     set({ socket: socket });
   },

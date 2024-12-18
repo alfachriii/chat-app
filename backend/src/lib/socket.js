@@ -16,19 +16,17 @@ export function getReceiverSocketId(userId) {
   return onlineUsers.get(userId);
 }
 
-
-
 const onlineUsers = new Map(); // userId -> socketId
 const socketToUser = new Map(); // socketId -> userId
 
 io.use((socket, next) => {
-    const userId = socket.handshake.query.userId; // Ambil userId dari query params
-    if (!userId) {
-      return next(new Error("Authentication error: userId is required"));
-    }
-    socket.userId = userId; // Tambahkan userId ke objek socket
-    next(); // Lanjutkan ke event connection
-  });
+  const userId = socket.handshake.query.userId; // Ambil userId dari query params
+  if (!userId) {
+    return next(new Error("Authentication error: userId is required"));
+  }
+  socket.userId = userId; // Tambahkan userId ke objek socket
+  next(); // Lanjutkan ke event connection
+});
 
 io.on("connection", (socket) => {
   console.log("A user connected", socket.id);
@@ -36,29 +34,46 @@ io.on("connection", (socket) => {
   const userId = socket.userId; // Ambil userId dari socket yang sudah ditambahkan oleh middleware
 
   // Simpan hubungan userId -> socketId dan sebaliknya
-  onlineUsers.set(userId, socket.id);
-  socketToUser.set(socket.id, userId);
 
-  socket.broadcast.emit("userStatusChange", { userId, isOnline: true });
+  socket.on("online", (userId) => {
+    onlineUsers.set(userId, socket.id);
+    socketToUser.set(socket.id, userId);
+    socket.broadcast.emit("userStatusChange", { userId, isOnline: true });
+  });
 
-
-  socket.on('messageDelivered', async (messageIds) => {
-    console.log("message ids: ", messageIds)
+  socket.on("messageDelivered", async (messageIds) => {
+    console.log("message ids: ", messageIds);
     const message = await Message.updateMany(
-      { _id: { $in: messageIds }},
-      { $set: { status: "delivered" }}
+      { _id: { $in: messageIds } },
+      { $set: { status: "delivered" } }
     );
 
     // Kirimkan status terbaru ke pengirim
     // io.to(message.senderId.toString()).emit('updateMessageStatus', message);
-});
+  });
 
   socket.on("checkStatus", (userId) => {
-    console.log("checkstatus")
+    console.log("checkstatus");
     const isOnline = onlineUsers.has(userId); // Periksa apakah userId ada di onlineUsers
     socket.emit("userStatusChange", { userId, isOnline, user: null }); // Kirim status hanya ke client yang meminta
   });
 
+  socket.on("offline", async (userId) => {
+    if (userId) {
+      onlineUsers.delete(userId); // Hapus dari daftar online
+      socketToUser.delete(socket.id); // Hapus dari daftar socketToUser
+      console.log("User offline:", userId);
+    }
+
+    const user = await User.findByIdAndUpdate(userId, {
+      lastSeen: new Date(),
+    });
+    socket.broadcast.emit("userStatusChange", {
+      userId,
+      isOnline: false,
+      user: user,
+    });
+  });
 
   socket.on("disconnect", async () => {
     console.log("A user disconnect", socket.io);
@@ -67,16 +82,16 @@ io.on("connection", (socket) => {
       onlineUsers.delete(userId); // Hapus dari daftar online
       socketToUser.delete(socket.id); // Hapus dari daftar socketToUser
       console.log("User disconnected:", userId);
-
     }
-    console.log("sebelum brodcast", userId)
-    
+
     const user = await User.findByIdAndUpdate(userId, {
-        lastSeen: new Date(),
+      lastSeen: new Date(),
     });
-    await user?.save();
-    
-    socket.broadcast.emit("userStatusChange", { userId, isOnline: false, user: user });
+    socket.broadcast.emit("userStatusChange", {
+      userId,
+      isOnline: false,
+      user: user,
+    });
   });
 });
 

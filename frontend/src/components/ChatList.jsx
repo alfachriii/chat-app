@@ -1,6 +1,6 @@
 import { HiDotsVertical } from "react-icons/hi";
 import { FaImage, FaSearch } from "react-icons/fa";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Settings from "./settings/Settings";
 import { useAuthStore } from "../store/auth.store";
 import { LuMessageSquarePlus } from "react-icons/lu";

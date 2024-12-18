@@ -72,8 +72,6 @@ const Chat = () => {
     setInputMessage("");
   };
 
-  console.log(isOnline)
-  const reversedMessages = [...messages].slice().reverse();
   if (!selectedUser) return null;
 
   return (

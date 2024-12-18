@@ -95,21 +95,10 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
-  // getRecentMessages: async () => {
-  //   try {
-  //     const res = await api.get("/messages/recent");
-  //     set({ recentMessages: res.data });
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // },
-
   getChatListAndSaveToIndexedDb: async () => {
     try {
       const users = await api.get("/messages/get-chat-list");
-      const messages = await api.get("/messages/recent");
-      console.log(messages.data)
-
+      const messages = await api.get("/messages/last");
       const userDatas = combineDataUser(users.data, messages.data);
 
       // add createdAt
@@ -133,7 +122,6 @@ export const useChatStore = create((set, get) => ({
       //     console.error("Terjadi kesalahan:", error);
       //   });
 
-      console.log(userDatas)
         set({ chatList: userDatas})
       // const chatListFromIndexedDb = await fetchUserList();
       // console.log(chatListFromIndexedDb);
@@ -143,26 +131,13 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
-  // getChatListFromIndexedDb: async () => {
-  //   try {
-  //     const results = await fetchUserList()
-  //     console.log(results)
-  //   } catch (error) {
-  //     console.log(error)
-  //     toast.error("Error while getting chat list")
-  //   }
-  // },
+  changeMessagesStatus: async () => {
+    try {
+      // const res = await api.get("/messages/undelivered")
 
-  changeMessagesStatus: () => {
-    const recentMessages = get().recentMessages;
-    console.log(Array.isArray(recentMessages));
-    const socket = useAuthStore.getState().socket;
-    const messageIds = Array.isArray(recentMessages)
-      ? recentMessages.map((message) => message._id)
-      : [];
 
-    if (messageIds.length > 0) {
-      socket.emit("messageDelivered", messageIds);
+    } catch (error) {
+      console.log("Error on change message status")
     }
   },
 

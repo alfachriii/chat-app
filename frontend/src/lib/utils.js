@@ -8,7 +8,6 @@ export function formatMessageTime(date) {
 }
 
 export function truncateText(text, maxLength) {
-  console.log(text.length)
   if (text.length > maxLength) {
     return text.substring(0, maxLength) + "...";
   }
@@ -21,8 +20,6 @@ export const combineDataUser = (users, messages) => {
     acc[msg._id] = msg.lastMessage; // Asumsi pesan terakhir adalah pesan terbaru
     return acc;
   }, {});
-
-  console.log(messageMap)
 
   // Gabungkan data users dengan pesan terakhir
   return users.map((user) => ({

@@ -295,7 +295,7 @@ const getMessagesForUser = async (userId) => {
   }
 };
 
-export const getRecentMessages = async (req, res) => {
+export const getLastMessages = async (req, res) => {
   const userId = req.user._id;
   try {
 
@@ -305,12 +305,19 @@ export const getRecentMessages = async (req, res) => {
     console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
   }
-
-  // res.status(200).json(chatList
 };
 
-// const lastMessages = await ambilPesanUntukBanyakUserDenganAgregasi(
-//   userId,
-//   otherUserIds
-// );
-// const results = await gabungkanDataKontakDenganPesan(contacts, lastMessages)
+export const getUndeliveredMessageIds = async (req, res) => {
+  const userId = req.user._id
+  try {
+    const updatedMessages = await PersonalMessage.updateMany(
+      { receiverId: userId, status: "sent" }, // Filter langsung berdasarkan receiverId
+      { $set: { status: "terbaca" } } // Update status menjadi terbaca
+    );
+    
+    // res.status(200).json(messageIds)
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ message: "Internal server error" })
+  }
+}

@@ -9,7 +9,7 @@ import { useEffect } from "react";
 import { useAuthStore } from "../store/auth.store";
 
 const HomePage = () => {
-  const { connectSocket, disconnectSocket } = useAuthStore()
+  const { authUser, socket, connectSocket } = useAuthStore()
   const { selectedUser, setSelectedUser, getChatListAndSaveToIndexedDb, chatList, combineDataUsers, combine } = useChatStore();
   const { modals } = useModalStore();
   const contactModal = modals.find((modal) => modal.modalId === "contact");
@@ -36,10 +36,10 @@ const HomePage = () => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         console.log("Aktif")
-        connectSocket()
+        socket.emit("online", authUser._id)
         // Logika ketika tab aktif
       } else {
-        disconnectSocket()
+        socket.emit("offline", authUser._id)
         // Logika ketika tab tidak aktif
       }
     };
@@ -50,7 +50,11 @@ const HomePage = () => {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [authUser._id, socket]);
+
+  useEffect(() => {
+    socket?.emit("online", authUser._id)
+  }, [authUser._id, socket])
 
   useEffect(() => {
     connectSocket()
