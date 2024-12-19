@@ -92,7 +92,7 @@ export const useChatStore = create((set, get) => ({
         status: "sent",
         msg: inputMessage,
         time: new Date(),
-        from: "send"
+        from: "send",
       });
       set({ chatList: updatedChats });
     } catch (error) {
@@ -109,7 +109,7 @@ export const useChatStore = create((set, get) => ({
       const messages = await api.get("/messages/last");
       const userDatas = combineDataUser(users.data, messages.data);
 
-      console.log(messages.data)
+      console.log(messages.data);
 
       // add createdAt
       const processedData = [];
@@ -204,11 +204,20 @@ export const useChatStore = create((set, get) => ({
           msg: newMessage.text,
           time: newMessage.createdAt,
         });
-        console.log(updatedChats)
+        console.log(updatedChats);
         set({ chatList: updatedChats });
       }
 
-      get().updateUndeliveredMessages()
+      get().updateUndeliveredMessages();
+    });
+
+    socket?.on("updateMessageStatus", ({ status, chatId }) => {
+      const chats = get().chatList;
+      const updatedChats = updateChatMessage(chats, chatId, {
+        status: status,
+      });
+
+      set({ chatList: updatedChats });
     });
   },
 }));

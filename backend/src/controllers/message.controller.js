@@ -1,6 +1,6 @@
 import { response } from "express";
 import cloudinary from "../lib/cloudinary.js";
-import { findUsersByEmails, getMimeType } from "../lib/utils.js";
+import { findUsersByEmails, getMimeType, updateMessageStatus } from "../lib/utils.js";
 import Contact from "../models/contact.model.js";
 import Message, { PersonalMessage } from "../models/message.model.js";
 import User from "../models/user.model.js";
@@ -215,7 +215,7 @@ const getMessagesForUser = async (userId) => {
       },
     ]);
 
-    console.log(JSON.stringify(results, null, 2));
+    // console.log(JSON.stringify(results, null, 2));
     return results;
   } catch (error) {
     console.log("Error while get messages for user", error);
@@ -235,32 +235,24 @@ export const getLastMessages = async (req, res) => {
 
 export const updateUndeliveredMessages = async (req, res) => {
   const userId = req.user._id;
-  const BATCH_SIZE = 50;
   try {
-    while (true) {
-      // Cari dokumen yang cocok, urutkan berdasarkan createdAt (paling lama)
-      const messages = await PersonalMessage.find({
-        receiverId: userId,
-        status: "sent",
-      })
-        .sort({ createdAt: 1 }) // Urutkan dari yang paling lama
-        .limit(BATCH_SIZE); // Ambil batch kecil
+    await updateMessageStatus(userId, "delivered");
 
-      if (messages.length === 0) break; // Jika tidak ada dokumen lagi, keluar dari loop
-
-      // Dapatkan ID dokumen yang akan diupdate
-      const ids = messages.map((msg) => msg._id);
-
-      // Update dokumen dengan ID yang ditemukan
-      const result = await PersonalMessage.updateMany(
-        { _id: { $in: ids } },
-        { $set: { status: "delivered" } }
-      );
-    }
-
-    // res.status(200).json(messageIds)
+    res.status(200);
   } catch (error) {
     console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const updateUnreadMessage = async (req, res) => {
+  const userId = req.user._id;
+  const { messageIds } = req.body;
+  try {
+    await updateMessageStatus(userId, "read", messageIds);
+
+    res.status(200);
+  } catch (error) {
     res.status(500).json({ message: "Internal server error" });
   }
 };

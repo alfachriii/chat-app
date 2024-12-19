@@ -3,6 +3,8 @@ import { config } from "dotenv";
 import User from "../models/user.model.js";
 import cloudinary from "./cloudinary.js";
 import Contact from "../models/contact.model.js";
+import { PersonalMessage } from "../models/message.model.js";
+import { getReceiverSocketId, io } from "./socket.js";
 config();
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -137,3 +139,65 @@ export const getMimeType = (base64) => {
   const un = base64.split(";")[0]
   return un.split(":")[1]
 }
+
+export const updateMessageStatus = async (
+  userId,
+  updateStatus,
+  messageIds = null
+) => {
+  const BATCH_SIZE = 50;
+  try {
+    if (messageIds) {
+      const message = await PersonalMessage.findById(messageIds[0]);
+
+      await PersonalMessage.updateMany(
+        { _id: { $in: messageIds } },
+        { $set: { status: updateStatus } }
+      );
+
+      if (message) {
+        const receiverSocketId = getReceiverSocketId(message.senderId);
+        console.log(receiverSocketId);
+        io.to(receiverSocketId).emit("updateMessageStatus", {
+          status: updateStatus,
+          chatId: message.receiverId,
+        });
+      }
+
+      return;
+    }
+
+    while (true) {
+      const messages = await PersonalMessage.find({
+        receiverId: userId,
+        status: "sent",
+      })
+        .sort({ createdAt: 1 }) // Urutkan dari yang paling lama
+        .limit(BATCH_SIZE); // Ambil batch kecil
+
+      if (messages.length === 0) break; // Jika tidak ada dokumen lagi, keluar dari loop
+
+      // Dapatkan ID dokumen yang akan diupdate
+      const ids = messages.map((msg) => msg._id);
+
+      // Update dokumen dengan ID yang ditemukan
+      const result = await PersonalMessage.updateMany(
+        { _id: { $in: ids } },
+        { $set: { status: updateStatus } }
+      );
+
+      const receiverSocketId = getReceiverSocketId(
+        messages[0].senderId.toString()
+      );
+
+      io.to(receiverSocketId).emit("updateMessageStatus", {
+        status: updateStatus,
+        chatId: messages[0].receiverId,
+      });
+    }
+
+    // res.status(200).json(messageIds)
+  } catch (error) {
+    console.log(error);
+  }
+};
